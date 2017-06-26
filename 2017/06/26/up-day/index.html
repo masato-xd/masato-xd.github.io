@@ -93,17 +93,17 @@
 
 
 
-<meta name="description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
+<meta name="description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。">
 <meta name="keywords" content="shell">
 <meta property="og:type" content="article">
 <meta property="og:title" content="printf的使用">
 <meta property="og:url" content="http://yoursite.com/2017/06/26/up-day/index.html">
 <meta property="og:site_name" content="律己宽人">
-<meta property="og:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
-<meta property="og:updated_time" content="2017-06-26T16:47:33.066Z">
+<meta property="og:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。">
+<meta property="og:updated_time" content="2017-06-26T18:40:49.255Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="printf的使用">
-<meta name="twitter:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
+<meta name="twitter:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。">
 
 
 
@@ -208,6 +208,16 @@
         </li>
       
         
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives/" rel="section">
             
@@ -296,6 +306,28 @@
           </span>
 
           
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/shell/" itemprop="url" rel="index">
+                    <span itemprop="name">shell</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
 
           
             
@@ -327,9 +359,10 @@
 <p><strong>参数说明：</strong></p>
 <ul>
 <li>format-string: 为格式控制字符串</li>
-<li>arguments: 为参数列表。</li>
-</ul>
+<li>arguments: 为参数列表。<a id="more"></a>
 <figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span>((a=<span class="number">0</span>; a&lt;=<span class="number">10</span>; a++))</div><div class="line"><span class="keyword">do</span></div><div class="line">    <span class="keyword">for</span>((b=<span class="number">0</span>; b&lt;=<span class="number">10</span>; b++))</div><div class="line">    <span class="keyword">do</span></div><div class="line">       printf -v file <span class="string">"%s %02d:%02d:00"</span> <span class="number">0618</span> <span class="variable">$a</span> <span class="variable">$b</span></div><div class="line"><span class="comment">#       grep "$file" 1.txt</span></div><div class="line">    done</div><div class="line">done</div></pre></td></tr></table></figure>
+</li>
+</ul>
 <p>结果为:<br><figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">02</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">03</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">04</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">05</span>:<span class="number">00</span></div><div class="line">...</div></pre></td></tr></table></figure></p>
 <blockquote>
 <p>printf -v file 是指将输出结果使用file变量存储<br>通过$file 来调用打印<br>%02d 显示两位,不足两位整数用0补齐</p>
@@ -386,6 +419,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/06/27/uwsgi/" rel="prev" title="使用uWsgi启动Django">
+                使用uWsgi启动Django <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -457,12 +494,21 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
           
 
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
           
 
           
@@ -470,7 +516,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">2</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -527,7 +573,7 @@
       <div class="footer-inner">
         <div class="copyright" >
   
-  &copy; 
+  &copy;  2015 - 
   <span itemprop="copyrightYear">2017</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
@@ -582,6 +628,8 @@
   
 
 
+  
+
 
 
 
@@ -609,6 +657,9 @@
 
   
   <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
 
 
   
