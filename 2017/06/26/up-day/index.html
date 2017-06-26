@@ -93,13 +93,16 @@
 
 
 
+<meta name="description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
 <meta property="og:type" content="article">
-<meta property="og:title" content="up_day">
+<meta property="og:title" content="up day">
 <meta property="og:url" content="http://yoursite.com/2017/06/26/up-day/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:updated_time" content="2017-06-26T14:12:20.665Z">
+<meta property="og:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
+<meta property="og:updated_time" content="2017-06-26T14:23:28.066Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="up_day">
+<meta name="twitter:title" content="up day">
+<meta name="twitter:description" content="Linux Shell 中printf的使用printf 命令的语法：  printf  format-string  [arguments…]  参数说明：  format-string: 为格式控制字符串 arguments: 为参数列表。  12345678for((a=0; a&amp;lt;=10; a++))do    for((b=0; b&amp;lt;=10; b++))    do">
 
 
 
@@ -133,7 +136,7 @@
 
 
 
-  <title>up_day | Hexo</title>
+  <title>up day | Hexo</title>
   
 
 
@@ -269,7 +272,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">up_day</h1>
+          <h1 class="post-title" itemprop="name headline">up day</h1>
         
 
         <div class="post-meta">
@@ -316,7 +319,21 @@
       
 
       
-        
+        <h2 id="Linux-Shell-中printf的使用"><a href="#Linux-Shell-中printf的使用" class="headerlink" title="Linux Shell 中printf的使用"></a>Linux Shell 中printf的使用</h2><p>printf 命令的语法：</p>
+<blockquote>
+<p>printf  format-string  [arguments…]</p>
+</blockquote>
+<p><strong>参数说明：</strong></p>
+<ul>
+<li>format-string: 为格式控制字符串</li>
+<li>arguments: 为参数列表。</li>
+</ul>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span>((a=<span class="number">0</span>; a&lt;=<span class="number">10</span>; a++))</div><div class="line"><span class="keyword">do</span></div><div class="line">    <span class="keyword">for</span>((b=<span class="number">0</span>; b&lt;=<span class="number">10</span>; b++))</div><div class="line">    <span class="keyword">do</span></div><div class="line">       printf -v file <span class="string">"%s %02d:%02d:00"</span> <span class="number">0618</span> <span class="variable">$a</span> <span class="variable">$b</span></div><div class="line"><span class="comment">#       grep "$file" 1.txt</span></div><div class="line">    done</div><div class="line">done</div></pre></td></tr></table></figure>
+<p>结果为:<br><figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">02</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">03</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">04</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">05</span>:<span class="number">00</span></div><div class="line">...</div></pre></td></tr></table></figure></p>
+<blockquote>
+<p>printf -v file 是指将输出结果使用file变量存储<br>通过$file 来调用打印<br>%02d 显示两位,不足两位整数用0补齐</p>
+</blockquote>
+
       
     </div>
 
@@ -407,8 +424,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Übersicht
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/images/avatar.gif"
@@ -452,6 +478,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Linux-Shell-中printf的使用"><span class="nav-number">1.</span> <span class="nav-text">Linux Shell 中printf的使用</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

@@ -272,7 +272,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2017/06/26/up-day/" itemprop="url">up_day</a></h1>
+                <a class="post-title-link" href="/2017/06/26/up-day/" itemprop="url">up day</a></h1>
         
 
         <div class="post-meta">
@@ -321,7 +321,21 @@
       
         
           
-            
+            <h2 id="Linux-Shell-中printf的使用"><a href="#Linux-Shell-中printf的使用" class="headerlink" title="Linux Shell 中printf的使用"></a>Linux Shell 中printf的使用</h2><p>printf 命令的语法：</p>
+<blockquote>
+<p>printf  format-string  [arguments…]</p>
+</blockquote>
+<p><strong>参数说明：</strong></p>
+<ul>
+<li>format-string: 为格式控制字符串</li>
+<li>arguments: 为参数列表。</li>
+</ul>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span>((a=<span class="number">0</span>; a&lt;=<span class="number">10</span>; a++))</div><div class="line"><span class="keyword">do</span></div><div class="line">    <span class="keyword">for</span>((b=<span class="number">0</span>; b&lt;=<span class="number">10</span>; b++))</div><div class="line">    <span class="keyword">do</span></div><div class="line">       printf -v file <span class="string">"%s %02d:%02d:00"</span> <span class="number">0618</span> <span class="variable">$a</span> <span class="variable">$b</span></div><div class="line"><span class="comment">#       grep "$file" 1.txt</span></div><div class="line">    done</div><div class="line">done</div></pre></td></tr></table></figure>
+<p>结果为:<br><figure class="highlight powershell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">02</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">03</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">04</span>:<span class="number">00</span></div><div class="line"><span class="number">0618</span> <span class="number">09</span>:<span class="number">05</span>:<span class="number">00</span></div><div class="line">...</div></pre></td></tr></table></figure></p>
+<blockquote>
+<p>printf -v file 是指将输出结果使用file变量存储<br>通过$file 来调用打印<br>%02d 显示两位,不足两位整数用0补齐</p>
+</blockquote>
+
           
         
       
