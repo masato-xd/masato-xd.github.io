@@ -101,3 +101,22 @@ pip 9.0.1 from C:\python36\lib\site-packages (python 3.6)
 
 
 ok,全部搞定,有问题评论留言
+
+----------
+**补充一点pip警告的问题**
+`DEPRECATION: The default format will switch to columns in the future. You can use --format=(legacy|columns) (or define a format=(legacy|columns) in your pip.conf under the [list] section) to disable this warning`
+
+原则是不用管的,不会影响程序.但是遇到问题要解决它,我就是谷歌出来的,分享出来
+在`C:\Users\你的账号`下建立pip文件夹，在pip下新建pip.ini：
+> [list]
+> format=columns
+
+**或者:**
+直接使用 pip freeze,  pip list 是将被弃用的
+
+还是要解释一下大概意思:
+> 它就是告诉你以后pip list的默认格式会采用columns，你可以在命令后面加上--format来指定什么展示格式
+
+**解决方法:**
+1. 加文件
+2. 改用pip freeze。
