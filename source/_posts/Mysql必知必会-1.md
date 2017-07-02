@@ -29,6 +29,9 @@ categories: sql
 创建的时候指定了主机名，授权的时候也需要使用用户名和主机名结合定义
 **命令:**
 `GRANT privileges ON databasename.tablename TO 'username'@'host'`
+> **可以通过授权来创建用户**
+> `GRANT privileges ON databasename.tablename TO 'username'@'host' IDENTIFIED BY '12345'`
+
 + privileges：用户的操作权限，如SELECT，INSERT，UPDATE等，如果要授予所的权限则使用ALL
 + databasename：数据库名
 + tablename：表名，如果要授予该用户对所有数据库和表的相应操作权限则可用\*表示，如\* . \*
