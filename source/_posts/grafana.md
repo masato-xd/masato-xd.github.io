@@ -1,8 +1,8 @@
 ---
 title: 无缝升级Grafana
 date: 2017-06-30 00:10:37
-tags: 随笔
-categories: 小记
+tags: grafana
+categories: linux
 ---
 
 

@@ -1,8 +1,8 @@
 ---
 title: 将Next+Hexo备份至GitHub
 date: 2017-06-28 03:07:39
-tags: 随笔
-categories: 小记
+tags: hexo
+categories: hexo
 ---
 
 

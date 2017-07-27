@@ -2,7 +2,7 @@
 title: 'Mysql必知必会 <1> '
 date: 2017-06-30 22:09:58
 tags: mysql
-categories: sql
+categories: db
 ---
 
 ### 创建用户

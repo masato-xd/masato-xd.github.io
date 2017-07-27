@@ -2,7 +2,7 @@
 title: Bash Shell快捷键
 date: 2017-06-27 22:19:43
 tags: shell
-categories: shell
+categories: linux
 ---
 
 简单记录一下shell下常用的快捷键

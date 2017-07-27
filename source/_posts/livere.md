@@ -1,8 +1,8 @@
 ---
 title: Hexo添加LiveRe评论系统
 date: 2017-06-29 21:53:21
-tags: 随笔
-categories: 小记
+tags: hexo
+categories: hexo
 ---
 > 参照的是这位[大虾的分享](https://blog.smoker.cc/web/add-comments-livere-for-hexo-theme-next.html)添加来必力评论系统，在这里就不重复造轮子了，只提一些注意事项
 
