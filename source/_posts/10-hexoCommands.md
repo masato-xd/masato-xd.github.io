@@ -5,7 +5,10 @@ tags: hexo
 categories: hexo
 ---
 
-脑子不用也会生锈，好记性不如烂笔头
+
+{% note info %}
+	脑子不用也会生锈，好记性不如烂笔头
+{% endnote %}
 
 <!-- more -->
 
