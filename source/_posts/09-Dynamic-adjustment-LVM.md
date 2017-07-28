@@ -10,6 +10,7 @@ categories: linux
 **xfs是不支持动态缩减的,可以增加**
 There is no way to shrink XFS file systems.
 [相关链接](http://tldp.org/HOWTO/LVM-HOWTO/reducelv.html)
+但是，我们可以借助于工具搞定它
 {% endnote %}
 
 <!-- more -->
