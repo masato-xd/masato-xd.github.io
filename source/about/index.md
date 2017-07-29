@@ -5,7 +5,8 @@ type: "about"
 comments: false
 ---
 
-
-{% blockquote George Herbert %}
+{% cq %} 
 The shortest answer is doing.
-{% endblockquote %}
+
+<b>George Herbert</b>
+{% endcq %}

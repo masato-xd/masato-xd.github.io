@@ -193,9 +193,9 @@ sidebar:
   #  - always  expand for all pages automatically
   #  - hide    expand only when click on the sidebar toggle icon.
   #  - remove  Totally remove sidebar including sidebar toggle.
-  display: post
+  # display: post
   #display: always
-  #display: hide
+  display: hide
   #display: remove
 
   # Sidebar offset from top menubar in pixels.
@@ -210,11 +210,13 @@ sidebar:
 
 
 # Blog rolls
-#links_title: Links
+links_title: Links
 #links_layout: block
 #links_layout: inline
-#links:
-  #Title: http://example.com/
+links:
+  Hexo官方: https://hexo.io/zh-cn/docs/
+  Hexo分享: http://www.jianshu.com/p/5973c05d7100
+  NexT主题: http://theme-next.iissnan.com/theme-settings.html#author-sites
 
 
 # ---------------------------------------------------------------
