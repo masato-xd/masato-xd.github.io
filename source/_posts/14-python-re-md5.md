@@ -26,13 +26,14 @@ print encodeStr
 f8fd73cf519e6f11513d505b9dd33541
 ```
 
-**为了复用,写一个简单的函数来实现: **
+**为了复用，写一个简单的函数**
 ```python
 def md5Encode(str):
     m = hashlib.md5()
     m.update(str)
     return m.hexdigest()
 ```
+
 
 {% note danger %}
 **注意**
