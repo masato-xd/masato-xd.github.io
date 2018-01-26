@@ -2,9 +2,9 @@
 title: Etcd集群配置
 date: 2017-12-15 23:17:47
 tags:
-- system
+- etcd
 categories:
-- linux
+- db
 ---
 
 {% note info %}
