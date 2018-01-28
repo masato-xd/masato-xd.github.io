@@ -12,8 +12,8 @@ categories: linux
 * `ctrl+f`：后移一个字符
 * `alt+b`：迁移一个单词
 * `alt+f`：后移一个单词
-* `ctrl+a`：移到行首
-* `crtl+e`：移到行尾
+* `0`：移到行首
+* `$`：移到行尾
 * `ctrl+x`：行首到当前光标替换
 * <font color=red>`ESC+f`：移动到下一个单词
 * <font color=red>`ESC+b`：移动到上一个单词
