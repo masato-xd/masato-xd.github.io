@@ -45,7 +45,7 @@ categories: hexo
 ```bash
 git clone git@github.com:username@username.github.io.git
 ```
-2. 安装一遍Hexo咯
+2. 安装一遍Hexo咯(进入目录中)
 ```powershell
 npm install 
 npm install hexo-cli g
