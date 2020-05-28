@@ -1,0 +1,804 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="redis," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="redis中有很多配置选项，下面我们来针对配置做一个详细说明">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis配置详解">
+<meta property="og:url" content="https://masato-xd.github.io/2018/04/19/32-redis-config/index.html">
+<meta property="og:site_name" content="律己宽人">
+<meta property="og:description" content="redis中有很多配置选项，下面我们来针对配置做一个详细说明">
+<meta property="article:published_time" content="2018-04-19T06:46:18.000Z">
+<meta property="article:modified_time" content="2020-05-27T15:04:23.106Z">
+<meta property="article:author" content="Xu D.">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"hide","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://masato-xd.github.io/2018/04/19/32-redis-config/"/>
+
+
+
+
+
+  <title>redis配置详解 | 律己宽人</title>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=63180312";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">律己宽人</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            Xu
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://masato-xd.github.io/2018/04/19/32-redis-config/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Xu D.">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/huojian.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="律己宽人">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis配置详解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-19T14:46:18+08:00">
+                2018-04-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/db/" itemprop="url" rel="index">
+                    <span itemprop="name">db</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <div class="note info"><p><code>redis</code>中有很多配置选项，下面我们来针对配置做一个详细说明</p>
+</div>
+
+<a id="more"></a>
+
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#是否在后台运行</span></span><br><span class="line">daemonize yes</span><br><span class="line"><span class="comment"># 当redis在后台运行的时候，默认会把pid文件放在/var/run/redis.pid，你可以配置到其他地址。</span></span><br><span class="line"><span class="comment"># 当运行多个redis服务时，需要指定不同的pid文件和端口</span></span><br><span class="line">pidfile /home/qqdz/redis/pid/redis_6101.pid</span><br><span class="line"><span class="comment"># 指定运行的端口</span></span><br><span class="line">port 6101</span><br><span class="line"><span class="comment"># 此参数确定了TCP连接中已完成队列(完成三次握手之后)的长度</span></span><br><span class="line">tcp-backlog 511</span><br><span class="line"><span class="comment"># 设置客户端连接时的超时时间，单位为秒。当客户端在这段时间内没有发出任何指令，那么关闭该连接</span></span><br><span class="line"><span class="comment"># 0是关闭此设置, 永不超时</span></span><br><span class="line">timeout 0</span><br><span class="line"><span class="comment"># 如果值非0，单位是秒，表示将周期性的使用SO_KEEPALIVE检测客户端是否还处于健康状态，避免服务器一直阻塞，官方给出的建议值是60S。</span></span><br><span class="line"><span class="comment"># 0是永不检测</span></span><br><span class="line">tcp-keepalive 0</span><br><span class="line"><span class="comment"># Redis总共支持四个级别：debug、verbose、notice、warning。</span></span><br><span class="line"><span class="comment"># Notice：普通的verbose，常用于生产环境；</span></span><br><span class="line">loglevel notice</span><br><span class="line"><span class="comment"># 日志的存储路径</span></span><br><span class="line">logfile <span class="string">"log_6101.log"</span></span><br><span class="line"><span class="comment"># 数据库的数量是可以配置的</span></span><br><span class="line"><span class="comment"># 可用的数据库数，默认值为16，默认数据库为0，数据库范围在0-（database-1）之间</span></span><br><span class="line">databases 16</span><br><span class="line"><span class="comment"># 指出在多长时间内，有多少次更新操作，就将数据同步到数据文件rdb。</span></span><br><span class="line"><span class="comment"># 相当于条件触发抓取快照，这个可以多个条件配合</span></span><br><span class="line">save 900 1		<span class="comment"># 900秒内至少有1个key被改变</span></span><br><span class="line">save 300 10		<span class="comment"># 300秒内至少有300个key被改变</span></span><br><span class="line">save 60 10000	<span class="comment"># 60秒内至少有10000个key被改变</span></span><br><span class="line"><span class="comment"># 当持久化出现错误之后，是否继续提供写服务</span></span><br><span class="line">stop-writes-on-bgsave-error yes</span><br><span class="line"><span class="comment"># 存储至本地数据库时（持久化到rdb文件）是否压缩数据</span></span><br><span class="line">rdbcompression no</span><br><span class="line"><span class="comment"># 读取和写入的时候是否支持CRC64校验</span></span><br><span class="line">rdbchecksum no</span><br><span class="line"><span class="comment"># 本地持久化数据库文件名，默认值为dump.rdb</span></span><br><span class="line">dbfilename rdb_6101.rdb</span><br><span class="line"><span class="comment"># 数据库镜像备份的文件放置的路径。</span></span><br><span class="line"><span class="comment"># 注意这里必须制定一个目录而不是文件</span></span><br><span class="line">dir /home/qqdz/redis/store</span><br><span class="line"></span><br><span class="line"><span class="comment"># 当slave服务器和master服务器失去连接后，或者当数据正在复制传输的时候，如果此参数值设置“yes”，slave服务器可以继续接受客户端的请求，否则，会返回给请求的客户端如下信息“SYNC with master in progress”</span></span><br><span class="line">slave-serve-stale-data yes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 是否允许slave服务器节点只提供读服务</span></span><br><span class="line">slave-read-only yes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 无磁盘diskless：master端直接将RDB file传到slave socket，不需要与disk进行交互</span></span><br><span class="line"><span class="comment"># 默认不使用diskless同步方式 </span></span><br><span class="line">repl-diskless-sync no</span><br><span class="line"></span><br><span class="line"><span class="comment"># 一个RDB文件从master端传到slave端，分为两种情况： </span></span><br><span class="line"><span class="comment"># 1、支持disk：master端将RDB file写到disk，稍后再传送到slave端；</span></span><br><span class="line"><span class="comment"># 2、无磁盘diskless：master端直接将RDB file传到slave socket，不需要与disk进行交互。 </span></span><br><span class="line"><span class="comment"># 无磁盘diskless方式在进行数据传递之前会有一个时间的延迟，以便slave端能够进行到待传送的目标队列中，这个时间默认是5秒</span></span><br><span class="line">repl-diskless-sync-delay 5</span><br><span class="line"></span><br><span class="line"><span class="comment"># 是否启用TCP_NODELAY，如果启用则会使用少量的TCP包和带宽去进行数据传输到slave端，当然速度会比较慢；如果不启用则传输速度比较快，但是会占用比较多的带宽</span></span><br><span class="line">repl-disable-tcp-nodelay no</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定slave的优先级。在不只1个slave存在的部署环境下，当master宕机时，Redis Sentinel会将priority值最小的slave提升为master。需要注意的是，若该配置项为0，则对应的slave永远不会自动提升为master</span></span><br><span class="line">slave-priority 100</span><br><span class="line"></span><br><span class="line"><span class="comment"># 开启append only 模式之后，redis 会把所接收到的每一次写操作请求都追加到appendonly.aof 文件中，当redis 重新启动时，会从该文件恢复出之前的状态。但是这样会造成appendonly.aof 文件过大，所以redis 还支持了BGREWRITEAOF 指令，对appendonly.aof 进行重新整理。默认是不开启的。</span></span><br><span class="line"><span class="comment">#appendonly yes</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># aof文件名</span></span><br><span class="line"><span class="comment">#appendfilename "aof_6101.aof"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># no: 不进行同步，系统去操作 . Faster.</span></span><br><span class="line"><span class="comment"># always: always表示每次有写操作都进行同步. Slow, Safest.</span></span><br><span class="line"><span class="comment"># everysec: 表示对写操作进行累积，每秒同步一次. Compromise.</span></span><br><span class="line"><span class="comment"># 默认是"everysec"，按照速度和安全折中这是最好的。</span></span><br><span class="line"><span class="comment">#appendfsync everysec</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定是否在后台aof文件rewrite期间调用fsync，默认为no，表示要调用fsync（无论后台是否有子进程在刷盘）。Redis在后台写RDB文件或重写afo文件期间会存在大量磁盘IO，此时，在某些linux系统中，调用fsync可能会阻塞。</span></span><br><span class="line">no-appendfsync-on-rewrite no</span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定Redis重写aof文件的条件，默认为100，表示与上次rewrite的aof文件大小相比，当前aof文件增长量超过上次afo文件大小的100%时，就会触发background rewrite。若配置为0，则会禁用自动rewrite</span></span><br><span class="line">auto-aof-rewrite-percentage 100</span><br><span class="line"><span class="comment"># 指定触发rewrite的aof文件大小。若aof文件小于该值，即使当前文件的增量比例达到auto-aof-rewrite-percentage的配置值，也不会触发自动rewrite。即这两个配置项同时满足时，才会触发rewrite。</span></span><br><span class="line">auto-aof-rewrite-min-size 64mb</span><br><span class="line"></span><br><span class="line"><span class="comment">#  是否加载不完整的aof文件来进行启动</span></span><br><span class="line">aof-load-truncated yes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 一个Lua脚本最长的执行时间，单位为毫秒，如果为0或负数表示无限执行时间，默认为5000</span></span><br><span class="line">lua-time-limit 5000</span><br><span class="line"></span><br><span class="line"><span class="comment"># redis的slow log是一个系统OS进行的记录查询，它是超过了指定的执行时间的。执行时间不包括类似与client进行交互或发送回复等I/O操作，它只是实际执行指令的时间。 </span></span><br><span class="line"><span class="comment"># 有2个参数可以配置，一个用来告诉redis执行时间，这个时间是微秒级的（1秒=1000000微秒），这是为了不遗漏命令。另一个参数是设置slowlog的长度，当一个新的命令被记录时，最旧的命令将会从命令记录队列中移除。 </span></span><br><span class="line">slowlog-log-slower-than 10000</span><br><span class="line">slowlog-max-len 128</span><br><span class="line"></span><br><span class="line"><span class="comment"># 延迟监控，用于记录等于或超过了指定时间的操作，默认是关闭状态，即值为0</span></span><br><span class="line">latency-monitor-threshold 0</span><br><span class="line"><span class="comment"># 事件通知，默认不启用</span></span><br><span class="line">notify-keyspace-events <span class="string">""</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 当条目数量较少且最大不会超过给定阀值时，哈希编码将使用一个很高效的内存数据结构，阀值由以下参数来进行配置</span></span><br><span class="line"><span class="built_in">hash</span>-max-ziplist-entries 512</span><br><span class="line"><span class="built_in">hash</span>-max-ziplist-value 64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 与哈希类似，少量的lists也会通过一个指定的方式去编码从而节省更多的空间，它的阀值通过以下参数来进行配置。 </span></span><br><span class="line">list-max-ziplist-entries 512</span><br><span class="line">list-max-ziplist-value 64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 集合sets在一种特殊的情况时有指定的编码方式，这种情况是集合由一组10进制的64位有符号整数范围内的数字组成的情况。以下选项可以设置集合使用这种特殊编码方式的size限制</span></span><br><span class="line"><span class="built_in">set</span>-max-intset-entries 512</span><br><span class="line"></span><br><span class="line"><span class="comment"># 与哈希和列表类似，有序集合也会使用一种特殊的编码方式来节省空间，这种特殊的编码方式只用于这个有序集合的长度和元素均低于以下参数设置的值时。</span></span><br><span class="line">zset-max-ziplist-entries 128</span><br><span class="line">zset-max-ziplist-value 64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置HyeperLogLog的字节数限制，这个值通常在0~15000之间，默认为3000，基本不超过16000 </span></span><br><span class="line">hll-sparse-max-bytes 3000</span><br><span class="line"></span><br><span class="line"><span class="comment"># redis将会在每秒中抽出10毫秒来对主字典进行重新散列化处理，这有助于尽可能的释放内存</span></span><br><span class="line">activerehashing yes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 如果达到hard limit那client将会立即失连。 </span></span><br><span class="line"><span class="comment"># 如果达到soft limit那client将会在soft seconds秒之后失连。 </span></span><br><span class="line"><span class="comment"># 参数soft limit &lt; hard limit。 </span></span><br><span class="line">client-output-buffer-limit normal 0 0 0</span><br><span class="line">client-output-buffer-limit slave 256mb 64mb 60</span><br><span class="line">client-output-buffer-limit pubsub 32mb 8mb 60</span><br><span class="line"></span><br><span class="line"><span class="comment"># redis使用一个内部程序来处理后台任务，例如关闭超时的client连接，清除过期的key等等。它并不会同时处理所有的任务，redis通过指定的hz参数去检查和执行任务。 </span></span><br><span class="line"><span class="comment"># hz默认设为10，提高它的值将会占用更多的cpu，当然相应的redis将会更快的处理同时到期的许多key，以及更精确的去处理超时。 </span></span><br><span class="line"><span class="comment"># hz的取值范围是1~500，通常不建议超过100，只有在请求延时非常低的情况下可以将值提升到100。 </span></span><br><span class="line">hz 10</span><br><span class="line"></span><br><span class="line"><span class="comment"># 当一个子进程要改写AOF文件，如果以下选项启用，那文件将会在每产生32MB数据时进行同步，这样提交增量文件到磁盘时可以避免出现比较大的延迟。 </span></span><br><span class="line">aof-rewrite-incremental-fsync yes</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关闭保护模式</span></span><br><span class="line">protected-mode no</span><br></pre></td></tr></table></figure>
+
+<p>动态关闭保护模式</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis<span class="literal">-cli</span> <span class="literal">-p</span> <span class="number">6500</span> CONFIG SET protected<span class="literal">-mode</span> no</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>本文作者：</strong>
+      Xu D.
+    </li>
+    <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://masato-xd.github.io/2018/04/19/32-redis-config/" title="redis配置详解">https://masato-xd.github.io/2018/04/19/32-redis-config/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong>
+      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/redis/" rel="tag"># redis</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/05/31-elk03/" rel="next" title="ELK系列03-kibana视图化简单尝试">
+                <i class="fa fa-chevron-left"></i> ELK系列03-kibana视图化简单尝试
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/10/33docker-zabbix-grafana/" rel="prev" title="docker搭建zabbix+grafana">
+                docker搭建zabbix+grafana <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8yOTI1NS81ODIz"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/huojian.jpg"
+               alt="Xu D." />
+          <p class="site-author-name" itemprop="name">Xu D.</p>
+           
+              <p class="site-description motion-element" itemprop="description">Sow nothing, reap nothing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://hexo.io/zh-cn/docs/" title="Hexo官方" target="_blank">Hexo官方</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.jianshu.com/p/5973c05d7100" title="Hexo分享" target="_blank">Hexo分享</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://theme-next.iissnan.com/theme-settings.html#author-sites" title="NexT主题" target="_blank">NexT主题</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xu D.</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next" target="_blank" rel="noopener">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,915 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="kubeadm是Kubernetes官方提供的快速安装和初始化Kubernetes集群的工具大大简化了部署的难度，参照前人的经验，自己动手实现了一番唯一的困难镜像在国外，你懂的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用kubeadm创建k8s集群">
+<meta property="og:url" content="https://masato-xd.github.io/2018/03/10/26-kubadmCreatK8s-md/index.html">
+<meta property="og:site_name" content="律己宽人">
+<meta property="og:description" content="kubeadm是Kubernetes官方提供的快速安装和初始化Kubernetes集群的工具大大简化了部署的难度，参照前人的经验，自己动手实现了一番唯一的困难镜像在国外，你懂的">
+<meta property="article:published_time" content="2018-03-10T05:34:21.000Z">
+<meta property="article:modified_time" content="2020-05-27T15:04:23.084Z">
+<meta property="article:author" content="Xu D.">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"hide","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://masato-xd.github.io/2018/03/10/26-kubadmCreatK8s-md/"/>
+
+
+
+
+
+  <title>使用kubeadm创建k8s集群 | 律己宽人</title>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=63180312";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">律己宽人</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            Xu
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://masato-xd.github.io/2018/03/10/26-kubadmCreatK8s-md/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Xu D.">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/huojian.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="律己宽人">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">使用kubeadm创建k8s集群</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-10T13:34:21+08:00">
+                2018-03-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <div class="note info"><p>kubeadm是Kubernetes官方提供的快速安装和初始化Kubernetes集群的工具<br>大大简化了部署的难度，参照前人的经验，自己动手实现了一番<br>唯一的困难镜像在国外，你懂的</p>
+</div>
+
+<a id="more"></a>
+
+<h2 id="使用kubeadm创建k8s集群"><a href="#使用kubeadm创建k8s集群" class="headerlink" title="使用kubeadm创建k8s集群"></a>使用kubeadm创建k8s集群</h2><h3 id="1-硬件情况"><a href="#1-硬件情况" class="headerlink" title="1. 硬件情况"></a>1. 硬件情况</h3><p>virtual Box 虚拟机两台<br>系统：centos7.4</p>
+<table>
+<thead>
+<tr>
+<th align="left">Role</th>
+<th align="right">Nums</th>
+<th align="center">配置</th>
+<th align="center">IP</th>
+<th align="center">主机名</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">master</td>
+<td align="right">1</td>
+<td align="center">1核2G</td>
+<td align="center">192.168.90.89</td>
+<td align="center">master</td>
+</tr>
+<tr>
+<td align="left">node</td>
+<td align="right">1</td>
+<td align="center">1核2G</td>
+<td align="center">192.168.90.228</td>
+<td align="center">node1</td>
+</tr>
+</tbody></table>
+<p>写入<code>/etc/hosts</code>,两台</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">192.168.90.89 master</span><br><span class="line">192.168.90.228 node1</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="1-1配置代理"><a href="#1-1配置代理" class="headerlink" title="1.1配置代理"></a>1.1配置代理</h4><p><strong>参考:</strong></p>
+<a href="/2018/03/10/25-centos7Proxy-md/" title="Centos7配置代理">Centos7配置代理</a>
+
+
+<h4 id="1-2系统设置"><a href="#1-2系统设置" class="headerlink" title="1.2系统设置"></a>1.2系统设置</h4><ol>
+<li><p>搭建测试环境,关闭防火墙</p>
+<ul>
+<li><code>systemctl stop firewalld</code></li>
+<li><code>systemctm disable firewalld</code></li>
+</ul>
+</li>
+<li><p>关闭swap空间</p>
+<ul>
+<li><code>swapoff -a</code>    </li>
+<li>修改<code>/etc/fstab</code>,注释掉swap自动挂载</li>
+</ul>
+</li>
+<li><p>关闭selinux</p>
+<ul>
+<li><code>vim /etc/sysconfig/selinux</code>,修改成<code>disabled</code></li>
+<li><code>setenforce 0</code></li>
+</ul>
+</li>
+<li><p>配置yum源</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># k8s</span></span><br><span class="line">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo</span><br><span class="line">[kubernetes]</span><br><span class="line">name=Kubernetes</span><br><span class="line">baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=1</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment">#yum源,可以使用aliyun的,也可以使用自带的centos.org</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<blockquote>
+<p><strong>特别注意:</strong><br>如果你安装的是k8s 1.9,不要修改docker和kubelet的cgroup驱动,改了反而报错</p>
+</blockquote>
+<h4 id="1-3调整内核参数"><a href="#1-3调整内核参数" class="headerlink" title="1.3调整内核参数"></a>1.3调整内核参数</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ cat &lt;&lt;EOF &gt;  /etc/sysctl.d/k8s.conf</span><br><span class="line">net.bridge.bridge-nf-call-ip6tables = 1</span><br><span class="line">net.bridge.bridge-nf-call-iptables = 1</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="comment">#执行</span></span><br><span class="line">sysctl --system</span><br></pre></td></tr></table></figure>
+<h3 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h3><p>都需安装docker, kubeadm, kubelet和kubectl<br>使用的下面版本:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubeadm-1.9.2-0.x86_64</span><br><span class="line">kubectl-1.9.2-0.x86_64</span><br><span class="line">kubelet-1.9.2-0.x86_64</span><br><span class="line">docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-1首先安装docker"><a href="#2-1首先安装docker" class="headerlink" title="2.1首先安装docker"></a>2.1首先安装docker</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">yum install -y docker</span><br><span class="line">systemctl <span class="built_in">enable</span> docker </span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<p>因为很多镜像在google上面的,所以<strong>docker也需要配置代理</strong><br>根据官网的文档:<a href="https://docs.docker.com/engine/admin/systemd/#httphttps-proxy" target="_blank" rel="noopener">连接</a></p>
+<p>1.为docker服务创建一个systemd的drop-in目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p /etc/systemd/system/docker.service.d</span><br></pre></td></tr></table></figure>
+<p>2.创建一个名为<code>/etc/systemd/system/docker.service.d/http-proxy.conf</code>的文件，该文件添加了<code>http_proxy</code>环境变量：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[Service]</span><br><span class="line">Environment=<span class="string">"HTTPS_PROXY=https://127.0.0.1:8118/"</span> <span class="string">"NO_PROXY=localhost,172.16.0.0/16,192.168.0.0/16,127.0.0.1,10.10.0.0/16,10.244.0.0/16"</span></span><br></pre></td></tr></table></figure>
+<p>3.刷新更改：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br></pre></td></tr></table></figure>
+<p>4.重启Docker:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
+<p>5.验证结果是否加载:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ systemctl show --property=Environment docker |more</span><br><span class="line">Environment=GOTRACEBACK=crash DOCKER_HTTP_HOST_COMPAT=1 PATH=/usr/libexec/docker:/usr/bin:/usr/sbin HTTPS_PROXY=https://127.0.0.1:8118/ NO_PROXY=localhost,172.16.0.0/16,192.168.0.0/16,127.0.0.1,10</span><br><span class="line">.10.0.0/16,10.244.0.0/16</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-2安装kubeadm-kubelet和kubectl"><a href="#2-2安装kubeadm-kubelet和kubectl" class="headerlink" title="2.2安装kubeadm, kubelet和kubectl"></a>2.2安装kubeadm, kubelet和kubectl</h4><p>使用yum安装:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y kubelet kubeadm kubectl</span><br><span class="line">systemctl <span class="built_in">enable</span> kubelet &amp;&amp; sudo systemctl start kubelet</span><br></pre></td></tr></table></figure>
+<p>以上操作需要在，<strong>所有</strong>机器上安装。</p>
+<h3 id="3-配置Msater节点"><a href="#3-配置Msater节点" class="headerlink" title="3. 配置Msater节点"></a>3. 配置Msater节点</h3><p>通过kubeadm init命令来初始化，指定kubernetes版本，并设置pod-network-cidr(使用哪种network addon),这里我们使用flannel,<code>为了flannel正确工作，--pod-network-cidr=10.244.0.0/16必须传递给kubeadm init</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubeadm init --kubernetes-version=v1.9.0 --pod-network-cidr=10.244.0.0/16</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果初始化失败,我们使用<code>kubeadm reset</code>重置一下<br><code>kubeadm init</code>将首先运行一系列预先检查，以确保机器准备运行Kubernetes。它会暴露警告并退出错误。然后它将下载并安装集群数据库和Image组件。</p>
+</blockquote>
+<p>我们会看到如下输出:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]<span class="comment"># kubeadm init --kubernetes-version=v1.9.0 --pod-network-cidr=10.244.0.0/16</span></span><br><span class="line">[init] Using Kubernetes version: v1.9.0</span><br><span class="line">[init] Using Authorization modes: [Node RBAC]</span><br><span class="line">[preflight] Running pre-flight checks.</span><br><span class="line">        [WARNING FileExisting-crictl]: crictl not found <span class="keyword">in</span> system path</span><br><span class="line">        [WARNING HTTPProxy]: Connection to <span class="string">"https://192.168.90.89:6443"</span> uses proxy <span class="string">"http://127.0.0.1:8118"</span>. If that is not intended, adjust your proxy settings</span><br><span class="line">        [WARNING HTTPProxyCIDR]: connection to <span class="string">"10.96.0.0/12"</span> uses proxy <span class="string">"http://127.0.0.1:8118"</span>. This may lead to malfunctional cluster setup. Make sure that Pod and Services IP ranges specified correctly as exceptions <span class="keyword">in</span> proxy configuration</span><br><span class="line">[preflight] Starting the kubelet service</span><br><span class="line">[certificates] Generated ca certificate and key.</span><br><span class="line">[certificates] Generated apiserver certificate and key.</span><br><span class="line">[certificates] apiserver serving cert is signed <span class="keyword">for</span> DNS names [master kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.90.89]</span><br><span class="line">[certificates] Generated apiserver-kubelet-client certificate and key.</span><br><span class="line">[certificates] Generated sa key and public key.</span><br><span class="line">[certificates] Generated front-proxy-ca certificate and key.</span><br><span class="line">[certificates] Generated front-proxy-client certificate and key.</span><br><span class="line">[certificates] Valid certificates and keys now exist <span class="keyword">in</span> <span class="string">"/etc/kubernetes/pki"</span></span><br><span class="line">[kubeconfig] Wrote KubeConfig file to disk: <span class="string">"admin.conf"</span></span><br><span class="line">[kubeconfig] Wrote KubeConfig file to disk: <span class="string">"kubelet.conf"</span></span><br><span class="line">[kubeconfig] Wrote KubeConfig file to disk: <span class="string">"controller-manager.conf"</span></span><br><span class="line">[kubeconfig] Wrote KubeConfig file to disk: <span class="string">"scheduler.conf"</span></span><br><span class="line">[controlplane] Wrote Static Pod manifest <span class="keyword">for</span> component kube-apiserver to <span class="string">"/etc/kubernetes/manifests/kube-apiserver.yaml"</span></span><br><span class="line">[controlplane] Wrote Static Pod manifest <span class="keyword">for</span> component kube-controller-manager to <span class="string">"/etc/kubernetes/manifests/kube-controller-manager.yaml"</span></span><br><span class="line">[controlplane] Wrote Static Pod manifest <span class="keyword">for</span> component kube-scheduler to <span class="string">"/etc/kubernetes/manifests/kube-scheduler.yaml"</span></span><br><span class="line">[etcd] Wrote Static Pod manifest <span class="keyword">for</span> a <span class="built_in">local</span> etcd instance to <span class="string">"/etc/kubernetes/manifests/etcd.yaml"</span></span><br><span class="line">[init] Waiting <span class="keyword">for</span> the kubelet to boot up the control plane as Static Pods from directory <span class="string">"/etc/kubernetes/manifests"</span>.</span><br><span class="line">[init] This might take a minute or longer <span class="keyword">if</span> the control plane images have to be pulled.</span><br><span class="line">[apiclient] All control plane components are healthy after 119.502833 seconds</span><br><span class="line">[uploadconfig] Storing the configuration used <span class="keyword">in</span> ConfigMap <span class="string">"kubeadm-config"</span> <span class="keyword">in</span> the <span class="string">"kube-system"</span> Namespace</span><br><span class="line">[markmaster] Will mark node master as master by adding a label and a taint</span><br><span class="line">[markmaster] Master master tainted and labelled with key/value: node-role.kubernetes.io/master=<span class="string">""</span></span><br><span class="line">[bootstraptoken] Using token: dcc11d.57ec9e4959b413d4</span><br><span class="line">[bootstraptoken] Configured RBAC rules to allow Node Bootstrap tokens to post CSRs <span class="keyword">in</span> order <span class="keyword">for</span> nodes to get long term certificate credentials</span><br><span class="line">[bootstraptoken] Configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token</span><br><span class="line">[bootstraptoken] Configured RBAC rules to allow certificate rotation <span class="keyword">for</span> all node client certificates <span class="keyword">in</span> the cluster</span><br><span class="line">[bootstraptoken] Creating the <span class="string">"cluster-info"</span> ConfigMap <span class="keyword">in</span> the <span class="string">"kube-public"</span> namespace</span><br><span class="line">[addons] Applied essential addon: kube-dns</span><br><span class="line">[addons] Applied essential addon: kube-proxy</span><br><span class="line"></span><br><span class="line">Your Kubernetes master has initialized successfully!</span><br><span class="line"></span><br><span class="line">To start using your cluster, you need to run the following as a regular user:</span><br><span class="line"></span><br><span class="line">  mkdir -p <span class="variable">$HOME</span>/.kube</span><br><span class="line">  sudo cp -i /etc/kubernetes/admin.conf <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">  sudo chown $(id -u):$(id -g) <span class="variable">$HOME</span>/.kube/config</span><br><span class="line"></span><br><span class="line">You should now deploy a pod network to the cluster.</span><br><span class="line">Run <span class="string">"kubectl apply -f [podnetwork].yaml"</span> with one of the options listed at:</span><br><span class="line">  https://kubernetes.io/docs/concepts/cluster-administration/addons/</span><br><span class="line"></span><br><span class="line">You can now join any number of machines by running the following on each node</span><br><span class="line">as root:</span><br><span class="line"></span><br><span class="line">  kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash sha256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</span><br></pre></td></tr></table></figure>
+
+<p>我们看到最后有一串:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash 256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</span><br></pre></td></tr></table></figure>
+<p>这是node节点加入集群,需要使用到的</p>
+<h4 id="3-1-配置kubeconfig"><a href="#3-1-配置kubeconfig" class="headerlink" title="3.1 配置kubeconfig"></a>3.1 配置kubeconfig</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> KUBECONFIG=/etc/kubernetes/admin.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"export KUBECONFIG=/etc/kubernetes/admin.conf"</span> &gt;&gt; /etc/profile</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-2-安装网络插件"><a href="#3-2-安装网络插件" class="headerlink" title="3.2 安装网络插件"></a>3.2 安装网络插件</h4><p>必须安装pod网络插件，以便pod可以相互通信。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml</span><br></pre></td></tr></table></figure>
+<p>一旦安装了pod网络，通过检查kube-dns pod 是否正在运行来确认它是否在工作<br><code>kubectl get pods --all-namespaces</code>一旦kube-dns pod 启动并运行，我们就可以添加node了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]<span class="comment"># kubectl get pods --all-namespaces        </span></span><br><span class="line">NAMESPACE     NAME                             READY     STATUS    RESTARTS   AGE</span><br><span class="line">kube-system   etcd-master                      1/1       Running   0          8h</span><br><span class="line">kube-system   kube-apiserver-master            1/1       Running   0          8h</span><br><span class="line">kube-system   kube-controller-manager-master   1/1       Running   0          8h</span><br><span class="line">kube-system   kube-dns-6f4fd4bdf-jwzn4         3/3       Running   0          8h</span><br><span class="line">kube-system   kube-flannel-ds-n74md            1/1       Running   0          8h</span><br><span class="line">kube-system   kube-flannel-ds-vdtdd            1/1       Running   2          3h</span><br><span class="line">kube-system   kube-proxy-clw4n                 1/1       Running   0          8h</span><br><span class="line">kube-system   kube-proxy-qpwq4                 1/1       Running   0          3h</span><br><span class="line">kube-system   kube-scheduler-master            1/1       Running   0          8h</span><br></pre></td></tr></table></figure>
+
+<p>到这里,master就配置完成了.</p>
+<h3 id="4-node加入集群"><a href="#4-node加入集群" class="headerlink" title="4. node加入集群"></a>4. node加入集群</h3><p>登陆node1,执行下面命令:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash 256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</span><br></pre></td></tr></table></figure>
+
+<p>顺利的话可以看到类似如下的提示:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Run <span class="string">'kubectl get nodes'</span> on the master to see this node join the cluster.</span><br></pre></td></tr></table></figure>
+
+<p>我们回到master执行命令查看:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]<span class="comment"># kubectl get nodes</span></span><br><span class="line">NAME      STATUS    ROLES     AGE       VERSION</span><br><span class="line">master    Ready     master    8h        v1.9.2</span><br><span class="line">node1     Ready     &lt;none&gt;    3h        v1.9.2</span><br></pre></td></tr></table></figure>
+
+<p>可以看到节点已经加入了，并且是正常的ready状态。<br>至此，整个集群的配置完成，可以开始使用了。</p>
+<hr>
+<h3 id="资料"><a href="#资料" class="headerlink" title="资料"></a>资料</h3><p>感谢文章作者给予参考借鉴<br><a href="http://blog.csdn.net/u012375924/article/details/78987263" target="_blank" rel="noopener">使用kubeadm部署k8s 1.9</a></p>
+<h3 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h3><ol>
+<li>时间不同步,导致kubeadm  join失败</li>
+<li>提示报错<code>The connection to the server localhost:8080 was refused - did you specify the right host or port?</code></li>
+<li>在node节点执行<code>kubectl get pods -n kube-system</code>报错,和上面一致</li>
+<li>token过期<br>创建永不过期的token<br><code>kubeadm token create --ttl 0</code><br><code>kubeadm list</code><br><a href="https://blog.frognew.com/2017/01/kubernetes-master-and-node.html" target="_blank" rel="noopener">k8s的master和node节点</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>本文作者：</strong>
+      Xu D.
+    </li>
+    <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://masato-xd.github.io/2018/03/10/26-kubadmCreatK8s-md/" title="使用kubeadm创建k8s集群">https://masato-xd.github.io/2018/03/10/26-kubadmCreatK8s-md/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong>
+      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/10/25-centos7Proxy-md/" rel="next" title="Centos7配置代理">
+                <i class="fa fa-chevron-left"></i> Centos7配置代理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/23/27-getLagou/" rel="prev" title="抓取拉勾网招聘信息">
+                抓取拉勾网招聘信息 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8yOTI1NS81ODIz"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/huojian.jpg"
+               alt="Xu D." />
+          <p class="site-author-name" itemprop="name">Xu D.</p>
+           
+              <p class="site-description motion-element" itemprop="description">Sow nothing, reap nothing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://hexo.io/zh-cn/docs/" title="Hexo官方" target="_blank">Hexo官方</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.jianshu.com/p/5973c05d7100" title="Hexo分享" target="_blank">Hexo分享</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://theme-next.iissnan.com/theme-settings.html#author-sites" title="NexT主题" target="_blank">NexT主题</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用kubeadm创建k8s集群"><span class="nav-number">1.</span> <span class="nav-text">使用kubeadm创建k8s集群</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-硬件情况"><span class="nav-number">1.1.</span> <span class="nav-text">1. 硬件情况</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1配置代理"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1配置代理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2系统设置"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.2系统设置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3调整内核参数"><span class="nav-number">1.1.3.</span> <span class="nav-text">1.3调整内核参数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-安装"><span class="nav-number">1.2.</span> <span class="nav-text">2. 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1首先安装docker"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1首先安装docker</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2安装kubeadm-kubelet和kubectl"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.2安装kubeadm, kubelet和kubectl</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-配置Msater节点"><span class="nav-number">1.3.</span> <span class="nav-text">3. 配置Msater节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-配置kubeconfig"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.1 配置kubeconfig</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-安装网络插件"><span class="nav-number">1.3.2.</span> <span class="nav-text">3.2 安装网络插件</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-node加入集群"><span class="nav-number">1.4.</span> <span class="nav-text">4. node加入集群</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#资料"><span class="nav-number">1.5.</span> <span class="nav-text">资料</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#遇到的问题"><span class="nav-number">1.6.</span> <span class="nav-text">遇到的问题</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xu D.</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next" target="_blank" rel="noopener">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i> 访问
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i> 总访问量
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
