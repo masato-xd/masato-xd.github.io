@@ -5,8 +5,4 @@ type: "about"
 comments: false
 ---
 
-{% cq %} 
-The shortest answer is doing.
-
-<b>George Herbert</b>
-{% endcq %}
+# test
