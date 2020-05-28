@@ -1,0 +1,954 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>es分片迁移，设置磁盘分配策略</title>
+    <link href="/2020/02/13/38-es%E5%88%86%E7%89%87%E8%BF%81%E7%A7%BB/"/>
+    <url>/2020/02/13/38-es%E5%88%86%E7%89%87%E8%BF%81%E7%A7%BB/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>背景：<br>ES数据节点，data目录磁盘满了，导致集群故障（red），将数据比较大分片迁移到其他节点</p><h3 id="reroute-api"><a href="#reroute-api" class="headerlink" title="reroute api"></a>reroute api</h3><p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-reroute.html" target="_blank" rel="noopener">官方介绍</a><br>reroute命令允许手动更改集群中各个分片的分配</p>          </div><a id="more"></a><p><code>move:</code>将启动的分片从一个节点移动到另一节点. 接受index和shard作为索引名和shard编号， from_node代表该节点将其从中移出， to_node代表该节点将其从其中移出.</p><h3 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h3><pre><code class="hljs bash"><span class="hljs-comment"># 只使用到move命令</span><span class="hljs-comment"># index：需要操作的索引</span><span class="hljs-comment"># shard：分片的编号</span><span class="hljs-comment"># from_node：分片所在的node</span><span class="hljs-comment"># to_node：需要迁移到哪个node</span>POST /_cluster/reroute&#123;  <span class="hljs-string">"commands"</span>: [    &#123;      <span class="hljs-string">"move"</span>: &#123;        <span class="hljs-string">"index"</span>: <span class="hljs-string">"eds_user_figure_info-1-bak"</span>,        <span class="hljs-string">"shard"</span>: 12,        <span class="hljs-string">"from_node"</span>: <span class="hljs-string">"Y7PLvaY8Q0yrAhc89VFw6g"</span>,        <span class="hljs-string">"to_node"</span>: <span class="hljs-string">"RXeK2wl5SiuF4F4fZod0xg"</span>      &#125;    &#125;  ]&#125;</code></pre><h3 id="磁盘分配策略"><a href="#磁盘分配策略" class="headerlink" title="磁盘分配策略"></a>磁盘分配策略</h3><p>调整磁盘的分配策略</p><p><code>low disk watermark</code>默认为85%，意味着该节点如果磁盘空间小于85%，那么该节点不会再分配新的分片，只会添加一些零散的文件；<br><code>high disk watermark</code>默认为90%，意味着该节点如果磁盘空间小于90%，那么ES会尝试重新分配分片，将该节点的分片移动到其他节点。<br>这两个参数都可以通过设置来改变，可以设置为百分比，也可以设置为绝对值：</p><blockquote><p>默认low是90%，high是95%</p></blockquote><pre><code class="hljs bash">PUT _cluster/settings&#123;  <span class="hljs-string">"transient"</span>: &#123;    <span class="hljs-string">"cluster.routing.allocation.disk.watermark.low"</span>: <span class="hljs-string">"85%"</span>,    <span class="hljs-string">"cluster.routing.allocation.disk.watermark.high"</span>: <span class="hljs-string">"90%"</span>  &#125;&#125;</code></pre><h4 id="当磁盘空间恢复的时候使用自动分配"><a href="#当磁盘空间恢复的时候使用自动分配" class="headerlink" title="当磁盘空间恢复的时候使用自动分配"></a>当磁盘空间恢复的时候使用自动分配</h4><pre><code class="hljs bash">curl -XPOST <span class="hljs-string">'http://127.0.01:9200/_cluster/reroute?retry_failed</span></code></pre>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>ELk</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>解决linux删除文件后空间未释放</title>
+    <link href="/2020/02/10/37-%E8%A7%A3%E5%86%B3linux%E5%88%A0%E9%99%A4%E6%96%87%E4%BB%B6%E5%90%8E%E7%A9%BA%E9%97%B4%E6%9C%AA%E9%87%8A%E6%94%BE/"/>
+    <url>/2020/02/10/37-%E8%A7%A3%E5%86%B3linux%E5%88%A0%E9%99%A4%E6%96%87%E4%BB%B6%E5%90%8E%E7%A9%BA%E9%97%B4%E6%9C%AA%E9%87%8A%E6%94%BE/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>linux有时会遇到一种情况，某个文件删除了,但是磁盘空间并没有释放<br>这是因为仍然有进程在使用此文件，其文件句柄没有被释放<br>两种方式来解决此问题。</p>          </div><a id="more"></a><p><strong>重启服务，释放文件句柄</strong></p><p>1.使用<code>lsof</code>找到进程</p><pre><code class="hljs bash">root<span class="hljs-comment"># lsof | fgrep "deleted"</span></code></pre><p>2.根据上面得到的<code>pid</code>，进行进程重启或直接<code>kill</code>此进程，此时空间会被释放</p><p><strong>不重启服务</strong></p><p>1.使用<code>lsof</code>找到进程</p><p>2.找到文件描述符（pid）所在地</p><pre><code class="hljs bash">root<span class="hljs-comment">#ls -l /proc/$&#123;pid&#125;/fd/ | fgrep "deleted"</span></code></pre><p>3.截断文件描述符</p><pre><code class="hljs bash"><span class="hljs-comment"># 清空fd</span>&gt; /proc/<span class="hljs-variable">$&#123;pid&#125;</span>/fd/<span class="hljs-variable">$&#123;id&#125;</span><span class="hljs-comment"># 或直接调用truncate命令</span>truncate -s 0 /proc/<span class="hljs-variable">$&#123;pid&#125;</span>/fd/$</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>格式化磁盘报错ddf_raid_member</title>
+    <link href="/2019/04/14/36-%E6%A0%BC%E5%BC%8F%E5%8C%96%E7%A3%81%E7%9B%98%E6%8A%A5%E9%94%99ddf-raid-member/"/>
+    <url>/2019/04/14/36-%E6%A0%BC%E5%BC%8F%E5%8C%96%E7%A3%81%E7%9B%98%E6%8A%A5%E9%94%99ddf-raid-member/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>将一块带有 raid 信息的磁盘接入新的服务器,进行格式化的时候,会提示<code>ddf_raid_member</code>报错信息<br>清除即可</p>          </div><a id="more"></a><p>系统插入了一块带有RAID信息的磁盘，格式化的时候报错</p><pre><code class="hljs shell">root@sjz-db1:~# mkfs.ext4 /dev/sdb mke2fs 1.42.13 (17-May-2015)/dev/sdb contains a ddf_raid_member file systemProceed anyway? (y,n) y/dev/sdb is apparently in use by the system; will not make a filesystem here!</code></pre><p>解决办法是清除RAID信息</p><pre><code class="hljs shell">root@sjz-db1:~# cat /proc/mdstat Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10] md126 : inactive sdb[0]      468320256 blocks super external:/md127/0       md127 : inactive sdb[0](S)      531288 blocks super external:ddf       unused devices: &lt;none&gt;root@sjz-db1:~# mdadm -S /dev/md126      mdadm: stopped /dev/md126root@sjz-db1:~# mdadm -S /dev/md127mdadm: stopped /dev/md127root@sjz-db1:~# mkfs.ext4 /dev/sdb          mke2fs 1.42.13 (17-May-2015)/dev/sdb contains a ddf_raid_member file systemProceed anyway? (y,n) yDiscarding device blocks: done                            Creating filesystem with 117212886 4k blocks and 29310976 inodesFilesystem UUID: c57fb9ab-d40a-4955-a4cf-69cf86d2c69bSuperblock backups stored on blocks:         32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,         4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,         102400000Allocating group tables: done                            Writing inode tables: done                            Creating journal (32768 blocks): doneWriting superblocks and filesystem accounting information: done</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>jumpserver 高可用及注意事项</title>
+    <link href="/2019/04/14/35-jumpserver-%E9%AB%98%E5%8F%AF%E7%94%A8%E5%8F%8A%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9/"/>
+    <url>/2019/04/14/35-jumpserver-%E9%AB%98%E5%8F%AF%E7%94%A8%E5%8F%8A%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>堡垒机,为了保证服务器安全，加个堡垒机，所有ssh连接都通过堡垒机来完成，<br>堡垒机也需要有身份认证，授权，访问控制，审计等功能。<br>Jumpserver 是一款由python编写开源的跳板机（堡垒机）系统，实现了跳板机应有的功能。<br>基于ssh协议来管理，客户端无需安装agent<br>感谢伟大的开源软件贡献者</p>          </div><a id="more"></a><h3 id="基本结构"><a href="#基本结构" class="headerlink" title="基本结构"></a>基本结构</h3><h4 id="架构图"><a href="#架构图" class="headerlink" title="架构图"></a>架构图</h4><img src="/2019/04/14/35-jumpserver-%E9%AB%98%E5%8F%AF%E7%94%A8%E5%8F%8A%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9/1.png" srcset="/img/loading.gif" class="" title="架构图"><h4 id="服务器信息"><a href="#服务器信息" class="headerlink" title="服务器信息"></a>服务器信息</h4><p>搭建两套jumpserver，两套coco，环境一模一样</p><table><thead><tr><th>主机</th><th>ip</th><th>角色</th></tr></thead><tbody><tr><td>ly-txds-3p-3j-jump1</td><td>42.51.7.61</td><td>master</td></tr><tr><td>tz-jump1</td><td>122.226.181.102</td><td>slave</td></tr></tbody></table><h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><h4 id="安装Jumpserver"><a href="#安装Jumpserver" class="headerlink" title="安装Jumpserver"></a>安装Jumpserver</h4><p>官方文档非常详尽，不再赘述<br><a href="http://docs.jumpserver.org/zh/docs/setup_by_ubuntu.html" target="_blank" rel="noopener">官方链接</a><br><a href="https://github.com/jumpserver/jumpserver/issues?page=2&q=is%3Aissue+is%3Aopen" target="_blank" rel="noopener">官方Github-Issue</a></p><h4 id="配置Mysql主主"><a href="#配置Mysql主主" class="headerlink" title="配置Mysql主主"></a>配置Mysql主主</h4><p>安装<code>Jumpserver</code>中有步骤安装<code>Mysql</code>，不再赘述，主要是<code>Mysql</code>配置</p><pre><code class="hljs plain">## 编辑文件，master与slave都修改bind-adress参数，监听本地所有IPvim &#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d&#x2F;mysqld.cnf bind-address&#x3D;0.0.0.0## 在master角色，文件最后添加以下参数vim &#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d&#x2F;mysqld.cnf [mysqld]server-id&#x3D;31 #服务器ID，不能重复## 业务有要求，ID必须连续，那就不能设置这两个参数了auto-increment-offset&#x3D;1 # 自增因子auto-increment-increment&#x3D;2 # 自增数量，奇数IDlog-bin&#x3D;mysql-bin # 开启master功能，做master都需要开启此参数binlog_format&#x3D;mixed # binlog的格式relay-log&#x3D;relay-binlog-slave-updates&#x3D;1 #将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启replicate-ignore-db &#x3D; mysql,information_schema,performance_schema # 忽略不同步的库，一般为了保证主主同步不冲突，会不同步mysql数据库。## 在slave角色，文件最后添加以下参数 vim &#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d&#x2F;mysqld.cnf [mysqld]server-id&#x3D;32 #服务器ID，不能重复## 业务有要求，ID必须连续，那就不能设置这两个参数了auto-increment-offset&#x3D;2 # 自增因子auto-increment-increment&#x3D;2 # 自增数量，偶数IDlog-bin&#x3D;mysql-bin # 开启master功能，做master都需要开启此参数binlog_format&#x3D;mixed # binlog的格式relay-log&#x3D;relay-binlog-slave-updates&#x3D;1 #将复制事件写入binlog,一台服务器既做主库又做从库此选项必须要开启replicate-ignore-db &#x3D; mysql,information_schema,performance_schema # 忽略不同步的库，一般为了保证主主同步不冲突，会不同步mysql数据库。</code></pre><h4 id="创建同步账号"><a href="#创建同步账号" class="headerlink" title="创建同步账号"></a>创建同步账号</h4><pre><code class="hljs mysql"># master上执行mysql &gt; grant replication slave,replication client on *.* to &#39;copy&#39;@slave_ip identified by &#39;123456&#39;;mysql &gt; flush privileges;# slave上执行mysql &gt; grant replication slave,replication client on *.* to &#39;copy&#39;@master_ip identified by &#39;123456&#39;;mysql &gt; flush privileges;</code></pre><h4 id="获取master信息"><a href="#获取master信息" class="headerlink" title="获取master信息"></a>获取master信息</h4><pre><code class="hljs plain">## 因为互为主备，所以两边都需要获取bin-log-file，position信息# master上执行mysql &gt; show master status;+------------------+----------+--------------+------------------+-------------------+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |+------------------+----------+--------------+------------------+-------------------+| mysql-bin.000001 |   1111 |              |                  |                   |+------------------+----------+--------------+------------------+-------------------+1 row in set (0.00 sec)# slave上执行mysql &gt; show master status;+------------------+----------+--------------+------------------+-------------------+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |+------------------+----------+--------------+------------------+-------------------+| mysql-bin.000002 |   2222|              |                  |                   |+------------------+----------+--------------+------------------+-------------------+1 row in set (0.00 sec)</code></pre><h4 id="配置主库信息"><a href="#配置主库信息" class="headerlink" title="配置主库信息"></a>配置主库信息</h4><pre><code class="hljs mysql"># master配置slave为主库mysql &gt; CHANGE MASTER TO MASTER_HOST&#x3D;&#39;slave_ip&#39; ,MASTER_USER&#x3D;&#39;copy&#39;,MASTER_PASSWORD&#x3D;&#39;123456&#39; ,MASTER_LOG_FILE&#x3D;&#39;mysql-bin.000001&#39;,MASTER_LOG_POS&#x3D;2222;# slave配置master为主库mysql &gt; CHANGE MASTER TO MASTER_HOST&#x3D;&#39;master_ip&#39;,MASTER_USER&#x3D;&#39;copy&#39;,MASTER_PASSWORD&#x3D;&#39;123456&#39;,MASTER_LOG_FILE&#x3D;&#39;mysql-bin.000002&#39;,MASTER_LOG_POS&#x3D;1111;,</code></pre><h4 id="启动从库"><a href="#启动从库" class="headerlink" title="启动从库"></a>启动从库</h4><pre><code class="hljs mysql"># 执行命令启动从库start slave;show slave status\G# 确认以下两个参数为YES代表同步正常Slave_IO_Running: YesSlave_SQL_Running: Yes</code></pre><h4 id="启动Jumpserver"><a href="#启动Jumpserver" class="headerlink" title="启动Jumpserver"></a>启动Jumpserver</h4><blockquote><p><strong>启动JMS服务，需要先启动jms，再启动coco</strong><br><strong>停止JMS服务，需要先停止coco，再停止jms</strong></p></blockquote><pre><code class="hljs shell"><span class="hljs-meta"> #</span><span class="bash"> 启动mysql</span> systemctl start mysql <span class="hljs-meta">#</span><span class="bash"> 启动jms</span>cd /opt/jumpserver/./jms start -d<span class="hljs-meta">#</span><span class="bash"> 启动coco</span>cd /opt/coco/ ./cocod start -d<span class="hljs-meta"> #</span><span class="bash"> 启动nginx</span> systemctl start nginx</code></pre><h3 id="排错思路"><a href="#排错思路" class="headerlink" title="排错思路"></a>排错思路</h3><p>通过以下两点确定服务是否异常</p><ol><li>web页面发出的错误信息</li><li>连接coco跳转到服务器发出的错误信息</li></ol><p>无法连接到coco排错思路</p><ol><li>用户本地的私钥key错误</li><li>coco服务没有启动</li></ol><blockquote><p><em>日志提示登录频繁</em><br>是因为用户被锁定了，在web页面解除用户限制</p></blockquote><h4 id="主要文件"><a href="#主要文件" class="headerlink" title="主要文件"></a>主要文件</h4><pre><code class="hljs plain"># jumpserver配置文件&#x2F;opt&#x2F;jumpserver&#x2F;config.yml&#x2F;opt&#x2F;coco&#x2F;config.yml # jumpserver主要log文件&#x2F;opt&#x2F;coco&#x2F;logs&#x2F;jump1.log&#x2F;opt&#x2F;jumpserver&#x2F;logs&#x2F;*.log# mysql配置文件&#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d&#x2F;mysqld.cnf # mysql日志文件&#x2F;var&#x2F;log&#x2F;mysql&#x2F;error.log&#x2F;var&#x2F;log&#x2F;mysql.log</code></pre><h4 id="需要做的操作"><a href="#需要做的操作" class="headerlink" title="需要做的操作"></a>需要做的操作</h4><p> <code>备机Jumpserver</code>在正式使用时，需将 <code>系统设置 -- 基本设置 -- 当前站点URL</code>的IP地址更正为备机IP，这样通过备机注册用户的时候收到的URI为备机IP路径</p><p> 启动<code>备机Jumpserver</code>的时候，因为是主主模式，所以不用修改数据库配置</p><h4 id="从0-3-x版本迁移，需要注意的"><a href="#从0-3-x版本迁移，需要注意的" class="headerlink" title="从0.3.x版本迁移，需要注意的"></a>从0.3.x版本迁移，需要注意的</h4><ol><li><p>注意管理用户的公钥与私钥<br>这里踩了一个大坑，旧JMS管理用户的key<br>真实路径是<code>/usr/local/src/jumpserver/keys/default/admin_user.pem</code>，并不在<code>/home/jump_super/.ssh</code>下</p></li><li><p>新搭建的JMS服务器<code>系统中</code>需要有旧JMS管理用户账户，将新JMS的公钥和私钥替换为旧的，这样不影响client上的用户</p></li><li><p>client服务器，防火墙要允许新JMS服务器的IP访问</p></li><li><p>注意client服务器的ssh端口</p></li></ol><h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a href="http://blog.51cto.com/ygqygq2/1870864" target="_blank" rel="noopener">MySql双主架构</a><br><a href="https://blog.csdn.net/solaraceboy/article/details/79903153" target="_blank" rel="noopener">主主同步参数</a><br><a href="https://wuyanteng.github.io/2018/11/28/Jumpserver1-4-3%E5%A4%87%E6%9C%BA-%E9%83%A8%E7%BD%B2%E6%A6%82%E8%A6%81/" target="_blank" rel="noopener">jms备机操作概要</a></p><h3 id="正确删除从库的步骤"><a href="#正确删除从库的步骤" class="headerlink" title="正确删除从库的步骤"></a>正确删除从库的步骤</h3><pre><code class="hljs plain">正确关闭从库正确关闭slave步骤1. 执行STOP SLAVE语句2. 使用SHOW STATUS检查slave_open_temp_tables变量的值3. 如果值为0，使用mysqladmin shutdown命令关闭从服务器4. 如果值不为0，用START SLAVE重启从服务器线程slave_open_temp_tables值显示，当前slave创建了多少临时表，注意由client显示创建的即便是这样，在使用临时表的场景下，如果服务器宕机，将遇到不可预知的问题。所以比较保险的做法是，创建实体表，虽然会由于分配的文件刷新到磁盘。mysql&gt; show status like &#39;%slave%&#39;;+------------------------+-------+| Variable_name          | Value |+------------------------+-------+| Com_show_slave_hosts   | 0     || Com_show_slave_status  | 0     || Com_slave_start        | 0     || Com_slave_stop         | 0     || Slave_open_temp_tables | 0     |+------------------------+-------+5 rows in set (0.00 sec)</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>安装pipenv,配置豆瓣pip源</title>
+    <link href="/2019/04/14/34-%E5%AE%89%E8%A3%85pipevn-%E9%85%8D%E7%BD%AE%E8%B1%86%E7%93%A3pip%E6%BA%90/"/>
+    <url>/2019/04/14/34-%E5%AE%89%E8%A3%85pipevn-%E9%85%8D%E7%BD%AE%E8%B1%86%E7%93%A3pip%E6%BA%90/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>pipven是一种更高级的包管理工具, virtualenv、pyenv 和 pip 三者的功能于一身,python 版本需要3.x 以上</p>          </div><a id="more"></a><blockquote><p>安装pip及pipenv</p></blockquote><pre><code class="hljs shell">curl https://bootstrap.pypa.io/get-pip.py -o get-pip.pypython get-pip.pypip install pipenvpipenv install --three`</code></pre><blockquote><p>修改<code>Pipfile</code>文件，改为豆瓣软件源</p></blockquote><pre><code class="hljs plain">[[source]]url &#x3D; &quot;https:&#x2F;&#x2F;pypi.douban.com&#x2F;simple&#x2F;&quot;verify_ssl &#x3D; truename &#x3D; &quot;pypi&quot;[dev-packages][packages]django &#x3D; &quot;&#x3D;&#x3D;1.11&quot;ipython &#x3D; &quot;*&quot;[requires]python_version &#x3D; &quot;3.6&quot;</code></pre><blockquote><p>添加豆瓣源</p></blockquote><pre><code class="hljs plain">## 创建编辑文件 ~&#x2F;.pip&#x2F;pip.conf## 添加以下内容[global]timeout &#x3D; 60index-url &#x3D; http:&#x2F;&#x2F;pypi.douban.com&#x2F;simpletrusted-host &#x3D; pypi.douban.com</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>docker搭建zabbix+grafana</title>
+    <link href="/2019/04/10/33docker-zabbix-grafana/"/>
+    <url>/2019/04/10/33docker-zabbix-grafana/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><code>docker</code>基于容器化，沙箱机制，可使你用较少的命令和脚本快速部署应用。一次构建，多处移植使用。再配合shell等脚本语言，可实现脚本化一键部署。</p>          </div><a id="more"></a><h4 id="文献资料"><a href="#文献资料" class="headerlink" title="文献资料"></a>文献资料</h4><p><a href="https://www.zabbix.com/documentation/4.2/manual/installation/containers" target="_blank" rel="noopener">通过容器启动zabbix</a><br><a href="https://grafana.com/docs/installation/docker/" target="_blank" rel="noopener">通过容器启动grafana</a></p><h4 id="zabbix-server"><a href="#zabbix-server" class="headerlink" title="zabbix-server"></a>zabbix-server</h4><blockquote><p>根据官方文档,可以使用多种形式创建<br><code>server</code>与<code>db</code>与<code>web</code>分开，通过<code>link</code>方式连接，在这里使用最易于实现的方式</p></blockquote><pre><code class="hljs shell">docker run --name zabbix-appliance -t \-p 10051:10051 \-p 80:80 \-d zabbix/zabbix-appliance:latest</code></pre><h4 id="zabbix-agent"><a href="#zabbix-agent" class="headerlink" title="zabbix-agent"></a>zabbix-agent</h4><pre><code class="hljs shell">docker run --name zabbix-server-agent \-e ZBX_HOSTNAME="192.168.101.140" \-e ZBX_SERVER_HOST="192.168.101.140,172.17.0.1" \-p 10050:10050 \-d zabbix/zabbix-agent:alpine-4.2-latest</code></pre><h4 id="grafana"><a href="#grafana" class="headerlink" title="grafana"></a>grafana</h4><p>使用兼顾数据持久化的方式启动</p><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/bash</span>basedir=$(<span class="hljs-built_in">cd</span> `dirname <span class="hljs-variable">$0</span>`;<span class="hljs-built_in">pwd</span>)mkdir -p data <span class="hljs-comment"># creates a folder for your data</span>ID=$(id -u) <span class="hljs-comment"># saves your user id in the ID variable</span>docker stop grafanadocker rm grafanadocker run \       -d --name grafana  -p 3000:3000 \       -e <span class="hljs-string">"GF_SECURITY_ADMIN_PASSWORD=lingdasa"</span> \       --user <span class="hljs-variable">$ID</span> --volume <span class="hljs-string">"<span class="hljs-variable">$PWD</span>/data:/var/lib/grafana"</span> \       grafana/grafana grafana</code></pre><h4 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h4><blockquote><p>zabbix前端时区的问题，两个方式，推荐使用方法2</p></blockquote><p>1, 重启容器以后，时区会还原，需要修改配置文件</p><pre><code class="hljs bash">vi /etc/php5/conf.d/99-zabbix.inidate.timezone=Asia/Shanghai</code></pre><p>2, 通过指定<code>PHP_TZ</code>变量启动容器 <code>-e PHP_TZ=Asia/Shanghai</code></p><blockquote><p>agent日志报，拒绝172.17.0.1主机连接的错误<br>原因是因为容器生成IP不是宿主机的ip,需要指定server_ip为容器的IP</p></blockquote><pre><code class="hljs plain">-e ZBX_SERVER_HOST&#x3D;&quot;192.168.101.140,172.17.0.1&quot;</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>容器</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>docker</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>redis配置详解</title>
+    <link href="/2018/04/19/32-redis-config/"/>
+    <url>/2018/04/19/32-redis-config/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><code>redis</code>中有很多配置选项，下面我们来针对配置做一个详细说明</p>          </div><a id="more"></a><pre><code class="hljs bash"><span class="hljs-comment">#是否在后台运行</span>daemonize yes<span class="hljs-comment"># 当redis在后台运行的时候，默认会把pid文件放在/var/run/redis.pid，你可以配置到其他地址。</span><span class="hljs-comment"># 当运行多个redis服务时，需要指定不同的pid文件和端口</span>pidfile /home/qqdz/redis/pid/redis_6101.pid<span class="hljs-comment"># 指定运行的端口</span>port 6101<span class="hljs-comment"># 此参数确定了TCP连接中已完成队列(完成三次握手之后)的长度</span>tcp-backlog 511<span class="hljs-comment"># 设置客户端连接时的超时时间，单位为秒。当客户端在这段时间内没有发出任何指令，那么关闭该连接</span><span class="hljs-comment"># 0是关闭此设置, 永不超时</span>timeout 0<span class="hljs-comment"># 如果值非0，单位是秒，表示将周期性的使用SO_KEEPALIVE检测客户端是否还处于健康状态，避免服务器一直阻塞，官方给出的建议值是60S。</span><span class="hljs-comment"># 0是永不检测</span>tcp-keepalive 0<span class="hljs-comment"># Redis总共支持四个级别：debug、verbose、notice、warning。</span><span class="hljs-comment"># Notice：普通的verbose，常用于生产环境；</span>loglevel notice<span class="hljs-comment"># 日志的存储路径</span>logfile <span class="hljs-string">"log_6101.log"</span><span class="hljs-comment"># 数据库的数量是可以配置的</span><span class="hljs-comment"># 可用的数据库数，默认值为16，默认数据库为0，数据库范围在0-（database-1）之间</span>databases 16<span class="hljs-comment"># 指出在多长时间内，有多少次更新操作，就将数据同步到数据文件rdb。</span><span class="hljs-comment"># 相当于条件触发抓取快照，这个可以多个条件配合</span>save 900 1<span class="hljs-comment"># 900秒内至少有1个key被改变</span>save 300 10<span class="hljs-comment"># 300秒内至少有300个key被改变</span>save 60 10000<span class="hljs-comment"># 60秒内至少有10000个key被改变</span><span class="hljs-comment"># 当持久化出现错误之后，是否继续提供写服务</span>stop-writes-on-bgsave-error yes<span class="hljs-comment"># 存储至本地数据库时（持久化到rdb文件）是否压缩数据</span>rdbcompression no<span class="hljs-comment"># 读取和写入的时候是否支持CRC64校验</span>rdbchecksum no<span class="hljs-comment"># 本地持久化数据库文件名，默认值为dump.rdb</span>dbfilename rdb_6101.rdb<span class="hljs-comment"># 数据库镜像备份的文件放置的路径。</span><span class="hljs-comment"># 注意这里必须制定一个目录而不是文件</span>dir /home/qqdz/redis/store<span class="hljs-comment"># 当slave服务器和master服务器失去连接后，或者当数据正在复制传输的时候，如果此参数值设置“yes”，slave服务器可以继续接受客户端的请求，否则，会返回给请求的客户端如下信息“SYNC with master in progress”</span>slave-serve-stale-data yes<span class="hljs-comment"># 是否允许slave服务器节点只提供读服务</span>slave-read-only yes<span class="hljs-comment"># 无磁盘diskless：master端直接将RDB file传到slave socket，不需要与disk进行交互</span><span class="hljs-comment"># 默认不使用diskless同步方式 </span>repl-diskless-sync no<span class="hljs-comment"># 一个RDB文件从master端传到slave端，分为两种情况： </span><span class="hljs-comment"># 1、支持disk：master端将RDB file写到disk，稍后再传送到slave端；</span><span class="hljs-comment"># 2、无磁盘diskless：master端直接将RDB file传到slave socket，不需要与disk进行交互。 </span><span class="hljs-comment"># 无磁盘diskless方式在进行数据传递之前会有一个时间的延迟，以便slave端能够进行到待传送的目标队列中，这个时间默认是5秒</span>repl-diskless-sync-delay 5<span class="hljs-comment"># 是否启用TCP_NODELAY，如果启用则会使用少量的TCP包和带宽去进行数据传输到slave端，当然速度会比较慢；如果不启用则传输速度比较快，但是会占用比较多的带宽</span>repl-disable-tcp-nodelay no<span class="hljs-comment"># 指定slave的优先级。在不只1个slave存在的部署环境下，当master宕机时，Redis Sentinel会将priority值最小的slave提升为master。需要注意的是，若该配置项为0，则对应的slave永远不会自动提升为master</span>slave-priority 100<span class="hljs-comment"># 开启append only 模式之后，redis 会把所接收到的每一次写操作请求都追加到appendonly.aof 文件中，当redis 重新启动时，会从该文件恢复出之前的状态。但是这样会造成appendonly.aof 文件过大，所以redis 还支持了BGREWRITEAOF 指令，对appendonly.aof 进行重新整理。默认是不开启的。</span><span class="hljs-comment">#appendonly yes</span><span class="hljs-comment"># aof文件名</span><span class="hljs-comment">#appendfilename "aof_6101.aof"</span><span class="hljs-comment"># no: 不进行同步，系统去操作 . Faster.</span><span class="hljs-comment"># always: always表示每次有写操作都进行同步. Slow, Safest.</span><span class="hljs-comment"># everysec: 表示对写操作进行累积，每秒同步一次. Compromise.</span><span class="hljs-comment"># 默认是"everysec"，按照速度和安全折中这是最好的。</span><span class="hljs-comment">#appendfsync everysec</span><span class="hljs-comment"># 指定是否在后台aof文件rewrite期间调用fsync，默认为no，表示要调用fsync（无论后台是否有子进程在刷盘）。Redis在后台写RDB文件或重写afo文件期间会存在大量磁盘IO，此时，在某些linux系统中，调用fsync可能会阻塞。</span>no-appendfsync-on-rewrite no<span class="hljs-comment"># 指定Redis重写aof文件的条件，默认为100，表示与上次rewrite的aof文件大小相比，当前aof文件增长量超过上次afo文件大小的100%时，就会触发background rewrite。若配置为0，则会禁用自动rewrite</span>auto-aof-rewrite-percentage 100<span class="hljs-comment"># 指定触发rewrite的aof文件大小。若aof文件小于该值，即使当前文件的增量比例达到auto-aof-rewrite-percentage的配置值，也不会触发自动rewrite。即这两个配置项同时满足时，才会触发rewrite。</span>auto-aof-rewrite-min-size 64mb<span class="hljs-comment">#  是否加载不完整的aof文件来进行启动</span>aof-load-truncated yes<span class="hljs-comment"># 一个Lua脚本最长的执行时间，单位为毫秒，如果为0或负数表示无限执行时间，默认为5000</span>lua-time-limit 5000<span class="hljs-comment"># redis的slow log是一个系统OS进行的记录查询，它是超过了指定的执行时间的。执行时间不包括类似与client进行交互或发送回复等I/O操作，它只是实际执行指令的时间。 </span><span class="hljs-comment"># 有2个参数可以配置，一个用来告诉redis执行时间，这个时间是微秒级的（1秒=1000000微秒），这是为了不遗漏命令。另一个参数是设置slowlog的长度，当一个新的命令被记录时，最旧的命令将会从命令记录队列中移除。 </span>slowlog-log-slower-than 10000slowlog-max-len 128<span class="hljs-comment"># 延迟监控，用于记录等于或超过了指定时间的操作，默认是关闭状态，即值为0</span>latency-monitor-threshold 0<span class="hljs-comment"># 事件通知，默认不启用</span>notify-keyspace-events <span class="hljs-string">""</span><span class="hljs-comment"># 当条目数量较少且最大不会超过给定阀值时，哈希编码将使用一个很高效的内存数据结构，阀值由以下参数来进行配置</span><span class="hljs-built_in">hash</span>-max-ziplist-entries 512<span class="hljs-built_in">hash</span>-max-ziplist-value 64<span class="hljs-comment"># 与哈希类似，少量的lists也会通过一个指定的方式去编码从而节省更多的空间，它的阀值通过以下参数来进行配置。 </span>list-max-ziplist-entries 512list-max-ziplist-value 64<span class="hljs-comment"># 集合sets在一种特殊的情况时有指定的编码方式，这种情况是集合由一组10进制的64位有符号整数范围内的数字组成的情况。以下选项可以设置集合使用这种特殊编码方式的size限制</span><span class="hljs-built_in">set</span>-max-intset-entries 512<span class="hljs-comment"># 与哈希和列表类似，有序集合也会使用一种特殊的编码方式来节省空间，这种特殊的编码方式只用于这个有序集合的长度和元素均低于以下参数设置的值时。</span>zset-max-ziplist-entries 128zset-max-ziplist-value 64<span class="hljs-comment"># 设置HyeperLogLog的字节数限制，这个值通常在0~15000之间，默认为3000，基本不超过16000 </span>hll-sparse-max-bytes 3000<span class="hljs-comment"># redis将会在每秒中抽出10毫秒来对主字典进行重新散列化处理，这有助于尽可能的释放内存</span>activerehashing yes<span class="hljs-comment"># 如果达到hard limit那client将会立即失连。 </span><span class="hljs-comment"># 如果达到soft limit那client将会在soft seconds秒之后失连。 </span><span class="hljs-comment"># 参数soft limit &lt; hard limit。 </span>client-output-buffer-limit normal 0 0 0client-output-buffer-limit slave 256mb 64mb 60client-output-buffer-limit pubsub 32mb 8mb 60<span class="hljs-comment"># redis使用一个内部程序来处理后台任务，例如关闭超时的client连接，清除过期的key等等。它并不会同时处理所有的任务，redis通过指定的hz参数去检查和执行任务。 </span><span class="hljs-comment"># hz默认设为10，提高它的值将会占用更多的cpu，当然相应的redis将会更快的处理同时到期的许多key，以及更精确的去处理超时。 </span><span class="hljs-comment"># hz的取值范围是1~500，通常不建议超过100，只有在请求延时非常低的情况下可以将值提升到100。 </span>hz 10<span class="hljs-comment"># 当一个子进程要改写AOF文件，如果以下选项启用，那文件将会在每产生32MB数据时进行同步，这样提交增量文件到磁盘时可以避免出现比较大的延迟。 </span>aof-rewrite-incremental-fsync yes<span class="hljs-comment"># 关闭保护模式</span>protected-mode no</code></pre><p>动态关闭保护模式</p><pre><code class="hljs powershell">redis<span class="hljs-literal">-cli</span> <span class="hljs-literal">-p</span> <span class="hljs-number">6500</span> CONFIG SET protected<span class="hljs-literal">-mode</span> no</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>db</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>redis</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>ELK系列03-kibana视图化简单尝试</title>
+    <link href="/2018/04/05/31-elk03/"/>
+    <url>/2018/04/05/31-elk03/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>紧接着上一文，我们采集到了信息，存储到<code>ElasticSearch</code>后，就需要使用<code>Kibana</code>来可视化数据了<br><code>Kibana</code>功能非常强大且便捷，目前版本<code>6.2.3</code></p>          </div><a id="more"></a><h3 id="通过head插件查看索引情况"><a href="#通过head插件查看索引情况" class="headerlink" title="通过head插件查看索引情况"></a>通过head插件查看索引情况</h3> <img src="/2018/04/05/31-elk03/1.png" srcset="/img/loading.gif" class="" title="这是最终结果"><h3 id="Kibana创建索引"><a href="#Kibana创建索引" class="headerlink" title="Kibana创建索引"></a>Kibana创建索引</h3><p>步骤:</p><ol><li>选择Management</li><li>选择Index Patterns</li><li>Create Index Pattern</li><li>可以看到有”mongodb-slow-log-日期”格式的索引数据</li><li>我们在Index pattern输入”mongodb-slow-log-*“即可,会自动导入</li></ol><h3 id="展示索引信息"><a href="#展示索引信息" class="headerlink" title="展示索引信息"></a>展示索引信息</h3><blockquote><p>通过选择Discover我们可以展示日志的原始数据</p><p>通过指定字段、时间范围显示我们想要的数据</p></blockquote> <img src="/2018/04/05/31-elk03/2.png" srcset="/img/loading.gif" class="" title="这是最终结果"><h4 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h4> <img src="/2018/04/05/31-elk03/5.png" srcset="/img/loading.gif" class="" title="这是最终结果"><h3 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h3><blockquote><p>选择Visualize可以将我们数据作图,展示的更直观</p><p>我们以饼图为例,展示所占比例,主要是对数据进行一种聚合</p></blockquote><h4 id="添加”桶”-Buckets-做聚合"><a href="#添加”桶”-Buckets-做聚合" class="headerlink" title="添加”桶”(Buckets)做聚合"></a>添加”桶”(Buckets)做聚合</h4><blockquote><p>桶可以这样理解,你想放什么数据,就放在桶里面…不需要的摒弃掉</p></blockquote> <img src="/2018/04/05/31-elk03/3.png" srcset="/img/loading.gif" class="" title="这是最终结果"><h4 id="添加”子桶”-Buckets"><a href="#添加”子桶”-Buckets" class="headerlink" title="添加”子桶”(Buckets)"></a>添加”子桶”(Buckets)</h4> <img src="/2018/04/05/31-elk03/4.png" srcset="/img/loading.gif" class="" title="这是最终结果"><h3 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h3><p><a href="http://cwiki.apachecn.org/pages/viewpage.action?pageId=8160289" target="_blank" rel="noopener">Kibana中文手册</a><br><a href="https://www.elastic.co/downloads/kibana" target="_blank" rel="noopener">官方下载连接</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据分析</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>ELK</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>ELK系列02-ELK分析MongoDB日志</title>
+    <link href="/2018/04/05/30-mongodbSlowLog/"/>
+    <url>/2018/04/05/30-mongodbSlowLog/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>线上有部分业务使用<code>MongoDB</code>作为存储<br>目前存在的问题是，并发很高的情况下经常宕掉，所以需要对一些指标进行监控、分析<br>监控使用<code>zabbix</code>，负责监视健康检查、连接数、占用服务器性能等指标<br>分析使用<code>ELK</code>，不多说，let’s do it</p>          </div><a id="more"></a><h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备:"></a>环境准备:</h3><p><code>mongodb</code>需要开启<code>profile</code>性能分析。<br>统一将安装包放入<code>/opt/</code>下,在<code>mongo</code>服务器上只需要部署<code>filebeat</code>来负责采集日志<br><code>Filebeat</code>是轻量级的采集,不负责过滤,启动快,资源消耗小,适合做采集日志工具<br>直接使用<code>Filebeat</code>输出到<code>ElasticSearch</code>中也是可以的,数据是原样的,无法做分析<br>日志过滤和存储通过<code>Logstash</code>和<code>ElasticSearch</code>来负责,展示通过<code>Kibana</code></p><h3 id="下载安装包"><a href="#下载安装包" class="headerlink" title="下载安装包:"></a>下载安装包:</h3><p>需要用到3个组件:</p><pre><code class="hljs bash"><span class="hljs-comment"># filebeat</span>wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.2.3-linux-x86_64.tar.gz<span class="hljs-comment"># Logstash</span>wget https://artifacts.elastic.co/downloads/logstash/logstash-6.2.3.tar.gz</code></pre><h3 id="配置Filebeat"><a href="#配置Filebeat" class="headerlink" title="配置Filebeat:"></a>配置Filebeat:</h3><p><code>Filebeat</code>需要配置的不多,只需要确定<code>log</code>所在目录,能正常抓取、输出到<code>Logstash</code>中</p><pre><code class="hljs bash"><span class="hljs-comment"># cd /opt/filebeat</span><span class="hljs-comment"># cat /opt/filebeat/mongo_fields.yml  </span>filebeat.prospectors:- <span class="hljs-built_in">type</span>: <span class="hljs-built_in">log</span>  paths:    - /home/qqdz/mongo/shard1/<span class="hljs-built_in">log</span>/shard1.logoutput.logstash:  hosts: [<span class="hljs-string">"10.20.33.52:5044"</span>]  <span class="hljs-comment"># 启动</span>./filebeat -e -c mongo_fields.yml</code></pre><h3 id="配置Logstash"><a href="#配置Logstash" class="headerlink" title="配置Logstash:"></a>配置Logstash:</h3><p>我这里<code>Logstash</code>和<code>ElasticSearch</code>在一台上面</p><p><code>Logstash</code>的配置复杂一些:</p><pre><code class="hljs bash"><span class="hljs-comment"># cd /opt/logstash</span><span class="hljs-comment"># cat mongodb-pipline.conf</span>input &#123;    beats &#123;        port =&gt; <span class="hljs-string">"5044"</span>        client_inactivity_timeout =&gt; <span class="hljs-string">"86400"</span>    &#125;&#125;filter &#123;  grok &#123;       match =&gt; [<span class="hljs-string">"message"</span>,<span class="hljs-string">"%&#123;TIMESTAMP_ISO8601:timestamp&#125;\s+%&#123;MONGO3_SEVERITY:severity&#125;\s+%&#123;MONGO3_COMPONENT:component&#125;%&#123;SPACE&#125;(?:\[%&#123;DATA:context&#125;\])?\s+%&#123;GREEDYDATA:body&#125;"</span>]  &#125;   <span class="hljs-keyword">if</span> [body] =~ <span class="hljs-string">"ms$"</span>  &#123;         grok &#123;             match =&gt; [<span class="hljs-string">"body"</span>,<span class="hljs-string">".*\&#125;(\s+%&#123;NUMBER:spend_time:int&#125;ms$)?"</span>]       &#125; &#125; date &#123;   match =&gt; [ <span class="hljs-string">"timestamp"</span>, <span class="hljs-string">"ISO8601"</span> ]   remove_field =&gt; [ <span class="hljs-string">"timestamp"</span> ]  &#125;&#125;output &#123;  elasticsearch &#123;         hosts =&gt; [<span class="hljs-string">"localhost:9200"</span>]         index=&gt;<span class="hljs-string">"mongodb-slow-log-%&#123;+YYYY.MM.dd&#125;"</span>        &#125;  <span class="hljs-comment">#stdout &#123; codec =&gt; rubydebug &#125;</span>&#125;<span class="hljs-comment"># 检测配置</span>logstash-6.2.2/bin/logstash -f mongodb-pipline.conf --config.test_and_exit<span class="hljs-comment"># 启动(加automatic以后,修改配置不需要重启Logstash)</span>logstash-6.2.2/bin/logstash -f mongodb-pipline.conf --config.reload.automatic</code></pre><h3 id="配置ElasticSearch-查看索引"><a href="#配置ElasticSearch-查看索引" class="headerlink" title="配置ElasticSearch,查看索引:"></a>配置ElasticSearch,查看索引:</h3><pre><code class="hljs bash"><span class="hljs-comment"># 我截取了关键的几个地方,可以到自动生成了根据Logstash定义的索引</span><span class="hljs-comment"># 可以看到正常输出了</span>[root@CHJ-Transit02 logstash]<span class="hljs-comment"># curl 'localhost:9200/_cat/indices?v'</span>health status index                       pri rep docs.count  store.size pri.store.sizegreen  open   mongodb-slow-log-2018.03.28   5   1     201952     232.7mb        116.3mbgreen  open   mongodb-slow-log-2018.03.30   5   1     163233     192.6mb         96.3mbgreen  open   mongodb-slow-log-2018.03.29   5   1     326301     377.6mb        188.7mb</code></pre><h3 id="注意点"><a href="#注意点" class="headerlink" title="注意点:"></a>注意点:</h3><ol><li>最复杂的地方是<code>grok</code>过滤规则的编写,需要大量的练习</li><li>官方定义了常规解析,我们还需要根据<code>mongodb</code>日志来分割取值</li></ol><h3 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h3><pre><code class="hljs bash"><span class="hljs-comment"># 这个目录里面存放了很多预定义模式</span>logstash-6.2.2/vendor/bundle/jruby/2.3.0/gems/logstash-patterns-core-4.1.2/patterns</code></pre><p><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns" target="_blank" rel="noopener">官方预定义Grok</a><br><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/mongodb" target="_blank" rel="noopener">Mongodb预定义</a><br><a href="https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns" target="_blank" rel="noopener">大部分应用的预定义</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据分析</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>ELK</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>记一次服务器nf_conntrack:table_full</title>
+    <link href="/2018/04/04/29-nf-conntrack/"/>
+    <url>/2018/04/04/29-nf-conntrack/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><code>nf_conntrack</code>模块用于跟踪连接的状态，供其他模块使用(调用信息)<br>最常见的使用场景是<code>iptables</code> 的 <code>nat</code> 和 <code>state</code> 模块<br><code>nf_conntrack</code>用1个<code>HASH表</code>记录已建立的连接，包括其他机器到本机、本机到其他机器、本机到本机<br>如果连接进来比释放的快，把哈希表塞满了，此时<code>netfilter</code>变成了一个黑洞，导致丢弃任何数据包。</p>          </div><a id="more"></a><h4 id="现象"><a href="#现象" class="headerlink" title="现象:"></a>现象:</h4><p>曲线异常,人数持续下降,与此同时服务器时通时不通</p><h4 id="问题"><a href="#问题" class="headerlink" title="问题:"></a>问题:</h4><p>查看日志发现大量异常:</p><pre><code class="hljs bash"><span class="hljs-comment">#cat /var/log/message</span>kernel: nf_conntrack: table full, dropping packet<span class="hljs-comment">#grep conntrack /var/log/messages</span>nf_conntrack version 0.5.0 (16384 buckets, 65536 max)</code></pre><h4 id="原因"><a href="#原因" class="headerlink" title="原因:"></a>原因:</h4><p>服务器访问量大，内核<code>netfilter</code>模块<code>conntrack</code>相关参数配置不合理，导致新连接被<code>drop</code>掉。<br>这里看到上面最大值是<code>65536</code>,  线上3台服务器差不多最大能支持190008个连接.<br>当时情况的确有19w+的连接,所以出现问题.</p><h4 id="分析"><a href="#分析" class="headerlink" title="分析:"></a>分析:</h4><p><code>nf_conntrack</code>模块用于跟踪连接的状态，供其他模块使用(调用信息)<br>最常见的使用场景是<code>iptables</code> 的 <code>nat</code> 和 <code>state</code> 模块<br><code>nf_conntrack</code>用1个<code>HASH表</code>记录已建立的连接，包括其他机器到本机、本机到其他机器、本机到本机<br>如果连接进来比释放的快，把哈希表塞满了，此时<code>netfilter</code>变成了一个黑洞，导致丢弃任何数据包。 </p><h4 id="命令"><a href="#命令" class="headerlink" title="命令:"></a>命令:</h4><p><code>netfilter</code> 相关的内核参数：</p><pre><code class="hljs bash"><span class="hljs-comment"># 实时连接跟踪数(这个可以做到监控中)</span>sysctl net.netfilter.nf_conntrack_count<span class="hljs-comment"># 查看最大连接数(故障的时候是65536,net.netfilter.nf_conntrack_buckets*4)</span>sysctl  net.netfilter.nf_conntrack_max<span class="hljs-comment"># HASH表的大小(net.netfilter.nf_conntrack_max/4)</span><span class="hljs-comment"># 根据实际看到,hash表的大小并不会影响到连接</span><span class="hljs-comment"># 重点还是max的值会影响连接</span>sysctl net.netfilter.nf_conntrack_buckets</code></pre><p><code>max</code>的计算公式是:</p><pre><code class="hljs bash"><span class="hljs-comment"># CONNTRACK_MAX = RAMSIZE (in bytes) / 16384 / (ARCH / 32)</span><span class="hljs-comment"># ARCH为你机器CPU的架构，64或32）</span>net.netfilter.nf_conntrack_max = 48(G) * 1024*1024*1024/16384/2</code></pre><p><code>hashsize</code>的计算公示是:</p><pre><code class="hljs bash"><span class="hljs-comment"># 哈希表大小（只读）（64位系统、8G内存默认 65536，16G翻倍，如此类推）</span>net.netfilter.nf_conntrack_max</code></pre><h4 id="优化"><a href="#优化" class="headerlink" title="优化:"></a>优化:</h4><p>调大<code>nf_conntrack_buckets</code>和<code>nf_conntrack_max</code>,超时时间这里没有考虑</p><pre><code class="hljs bash"><span class="hljs-comment"># 机器是128G内存的 </span><span class="hljs-comment"># vim /etc/sysctl.d/99-sysctl.conf 这个文件是 /etc/sysctl.conf 软连接</span>net.netfilter.nf_conntrack_max = 4194304net.nf_conntrack_max = 4194304<span class="hljs-comment"># net.netfilter.nf_conntrack_buckets 不能直接改(报错)</span><span class="hljs-built_in">echo</span> 1048576 &gt; /sys/module/nf_conntrack/parameters/hashsize<span class="hljs-comment"># 最后执行</span>sysctl -p</code></pre><h4 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料:"></a>相关资料:</h4><p><a href="https://wiki.khnet.info/index.php/Conntrack_tuning" target="_blank" rel="noopener">Conntrack tuning</a><br><a href="https://testerhome.com/topics/7509" target="_blank" rel="noopener">nf_conntrack_max优化</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>ELK系列01-ElasticSearch单机2节点安装测试</title>
+    <link href="/2018/04/04/28-elk01/"/>
+    <url>/2018/04/04/28-elk01/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>传统通过awk、grep、cat、tail的方式查询日志效率慢而且范围小，不能直观展现。<br>不适用于大批量主机查询，使用ELK栈就很适合这种场景，并且做分析。<br>通过这个方案，解放运维枯燥的查询统计操作，相对从中可以挖掘出信息，反哺业务、开发做进一步的针对性改进</p><p>常见的需求就是收集、查询、显示，正对应logstash、elasticsearch、kibana的功能。<br>ELK（ElasticSearch + Logstash + Filebeat + Kibana）架构专为收集、分析和存储日志所设计。<br>采集\传输我使用Filebeat，Filebeta是轻量级、高效、资源占用低的日志采集工具，是家族新成员。Logstash只做过滤</p><p>我把自己拿来监控’mongodb慢日志’的实践来分享给大家，互相进步。</p>          </div><a id="more"></a><h4 id="单机双节点"><a href="#单机双节点" class="headerlink" title="单机双节点"></a>单机双节点</h4><blockquote><p>因为Elasticsearch不能通过<code>root</code>用户启动,所以需要自己创建用户</p></blockquote><p><strong>创建用户</strong></p><pre><code class="hljs bash">useradd elasticsearch</code></pre><p><strong>创建目录</strong></p><pre><code class="hljs bash">su - elasticsearchmkdir node1 node2 logs1 logs1</code></pre><p><strong>官方下载安装包</strong></p><pre><code class="hljs bash"><span class="hljs-built_in">cd</span> /optwget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.3.tar.gztar zxvf elasticsearch-6.2.3.tar.gz</code></pre><p><strong>拷贝两个配置</strong></p><pre><code class="hljs bash">mkdir es-9200 es-9201cp elasticsearch-6.2.3/* es-9200cp elasticsearch-6.2.3/* es-9201</code></pre><p><strong>es-9200配置:</strong></p><pre><code class="hljs bash">cluster.name: xd node.name: node-1path.data: /home/elasticsearch/node1path.logs: /home/elasticsearch/node1/logs1network.host: 0.0.0.0http.port: 9200transport.tcp.port: 9300discovery.zen.ping.unicast.hosts: [<span class="hljs-string">"127.0.0.1:9300"</span>, <span class="hljs-string">"127.0.0.1:9301"</span>]http.cors.enabled: <span class="hljs-literal">true</span>  http.cors.allow-origin: <span class="hljs-string">"*"</span>http.cors.allow-headers: <span class="hljs-string">"X-Requested-With, Content-Type, Content-Length, Authorization, Accept"</span></code></pre><p><strong>es-9201配置:</strong></p><pre><code class="hljs bash">cluster.name: xdnode.name: node-2path.data: /home/elasticsearch/node2path.logs: /home/elasticsearch/node2/logs2network.host: 0.0.0.0http.port: 9201transport.tcp.port: 9301discovery.zen.ping.unicast.hosts: [<span class="hljs-string">"127.0.0.1:9300"</span>, <span class="hljs-string">"127.0.0.1:9301"</span>]http.cors.enabled: <span class="hljs-literal">true</span>  http.cors.allow-origin: <span class="hljs-string">"*"</span>http.cors.allow-headers: <span class="hljs-string">"X-Requested-With, Content-Type, Content-Length, Authorization, Accept"</span></code></pre><p><strong>配置中需要注意的地方:</strong></p><pre><code class="hljs bash">cluster.name:集群名称需要一样node.name:根据实际名字修改http.port:服务监听的端口,不能冲突transport.port:与其他节点通信的端口discovery.zen.ping.unicast.hosts:设置集群中master节点的初始列表，可以通过这些节点来自动发现新加入集群的节点http.cors.*:主要是为了能让head插件访问es,以及处理跨域请求</code></pre><h4 id="通过指定配置目录启动"><a href="#通过指定配置目录启动" class="headerlink" title="通过指定配置目录启动"></a>通过指定配置目录启动</h4><p><strong>指定目录启动:</strong></p><blockquote><p>直接通过<code>./bin/elasticsearch</code>会直接指向到默认的配置,与环境冲突</p></blockquote><pre><code class="hljs bash">/home/elasticsearch/es-9200/bin/elasticsearch -path.conf=/home/elasticsearch/node1/home/elasticsearch/es-9201/bin/elasticsearch -path.conf=/home/elasticsearch/node2<span class="hljs-comment"># 确认启动没有问题了,再加上-d参数,可以后台执行</span></code></pre><h4 id="安装head插件"><a href="#安装head插件" class="headerlink" title="安装head插件"></a>安装head插件</h4><ol><li><p>下载head插件</p><pre><code class="hljs bash">wget  https://github.com/mobz/elasticsearch-head/archive/master.zip</code></pre></li><li><p>安装node</p><pre><code class="hljs bash">wget https://npm.taobao.org/mirrors/node/latest-v4.x/node-v4.4.7-linux-x64.tar.gztar -zxvf node-v4.4.7-linux-x64.tar.gz<span class="hljs-comment"># 添加环境变量</span>vim /etc/profile<span class="hljs-built_in">export</span> NODE_HOME=/opt/node/node-v4.4.7-linux-x64/bin<span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$JAVA_HOME</span>:<span class="hljs-variable">$PATH</span>:<span class="hljs-variable">$NODE_HOME</span></code></pre></li></ol><ol start="3"><li><p>安装grunt</p><pre><code class="hljs bash"><span class="hljs-comment"># grunt是基于Node.js的项目构建工具,可以进行压缩、测试、执行等等的工作,head插件就是通过grunt启动</span><span class="hljs-built_in">cd</span> /opt/elasticsearch-head-masternpm install -g grunt-cli  //执行后会生成node_modules文件夹<span class="hljs-comment"># 检查是否成功安装</span>grunt -version</code></pre></li><li><p>修改head插件源码</p><pre><code class="hljs bash"><span class="hljs-comment"># 修改监听地址:Gruntfile.js(如果有需要的话)</span>connect: &#123;        server: &#123;                options: &#123;                        port: 9100,                        base: <span class="hljs-string">'.'</span>,                        keepalive: <span class="hljs-literal">true</span>                &#125;        &#125;&#125;<span class="hljs-comment"># 修改连接的节点地址</span><span class="hljs-comment"># vim _site/app.js //4354行</span>this.base_uri = this.config.base_uri || this.prefs.get(<span class="hljs-string">"app-base_uri"</span>) || <span class="hljs-string">"http://45.115.146.22:9201"</span>;<span class="hljs-comment"># 安装\启动插件</span>npm installnpm run start</code></pre></li><li><p>启动效果</p><img src="/2018/04/04/28-elk01/1.png" srcset="/img/loading.gif" class="" title="这是最终结果"></li></ol><h4 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h4><ol><li><p><code>java</code>有报没有权限写入日志的警告</p><p>将目录设置权限<code>chmod o+rwx</code></p></li><li><p><code>head</code>跨域请求的问题,无法获取到信息</p><p>增加配置<code>http.cors.allow-headers: &quot;X-Requested-With, Content-Type, Content-Length, Authorization, Accept&quot;</code></p></li><li><p><code>ES</code>无法使用root启动</p><p>创建另外的用户,切换到新建的用户启动<code>es</code></p></li></ol><h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a href="https://blog.csdn.net/bluetjs/article/details/78734005" target="_blank" rel="noopener">Elasticsearch6.0及其head插件安装</a></p><p><a href="http://www.voidcn.com/article/p-xaoghcdd-bqd.html" target="_blank" rel="noopener">Es5.x单机多节点配置</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据分析</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>ELK</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>抓取拉勾网招聘信息</title>
+    <link href="/2018/03/23/27-getLagou/"/>
+    <url>/2018/03/23/27-getLagou/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>通过查看页面元素,找到<code>json</code>数据,这里面有当页全部的信息.直接处理这一部分就可以了<br>使用<code>pandas</code>将数据写入csv中</p>          </div><a id="more"></a><p>下面是内容:</p><pre><code class="hljs python"><span class="hljs-keyword">import</span> requests<span class="hljs-keyword">import</span> time<span class="hljs-keyword">import</span> sys<span class="hljs-keyword">import</span> random<span class="hljs-keyword">import</span> pandas <span class="hljs-keyword">as</span> pd<span class="hljs-comment"># 全国</span><span class="hljs-comment"># url = r'https://www.lagou.com/jobs/positionAjax.json?needAddtionalResult=false&amp;isSchoolJob=0'</span><span class="hljs-comment"># 上海</span>url = <span class="hljs-string">r'https://www.lagou.com/jobs/positionAjax.json?city=%E4%B8%8A%E6%B5%B7&amp;needAddtionalResult=false&amp;isSchoolJob=0'</span>header = &#123;    <span class="hljs-string">'Accept'</span>: <span class="hljs-string">"application/json, text/javascript, */*; q=0.01"</span>,    <span class="hljs-string">'Accept-Encoding'</span>: <span class="hljs-string">"gzip, deflate, br"</span>,    <span class="hljs-string">'Accept-Language'</span>: <span class="hljs-string">"zh-CN,zh;q=0.9"</span>,    <span class="hljs-string">'Connection'</span>: <span class="hljs-string">"keep-alive"</span>,    <span class="hljs-string">'Content-Length'</span>: <span class="hljs-string">"25"</span>,    <span class="hljs-string">'Content-Type'</span>: <span class="hljs-string">"application/x-www-form-urlencoded; charset=UTF-8"</span>,    <span class="hljs-string">'Cookie'</span>: <span class="hljs-string">"_ga=GA1.2.148222605.1514211497; user_trace_token=20171225221816-72dec81c-e97e-11e7-9e6c-5254005c3644; LGUID=20171225221816-72decce5-e97e-11e7-9e6c-5254005c3644; JSESSIONID=ABAAABAAAFCAAEG1260B682CC05B68D0702AFC0BE7C9F99; X_HTTP_TOKEN=873379ecae5efb8078bbae146cab2317; showExpriedIndex=1; showExpriedCompanyHome=1; showExpriedMyPublish=1; hasDeliver=5; index_location_city=%E5%85%A8%E5%9B%BD; hideSliderBanner20180305WithTopBannerC=1; _gid=GA1.2.1510422010.1521084881; Hm_lvt_4233e74dff0ae5bd0a3d81c6ccf756e6=1520662114,1520997777,1521084881; gate_login_token=019c2049156a849e6fc5c8bbba46b6b4bfc3f7e1c28e88b7; TG-TRACK-CODE=search_code; login=false; unick="</span><span class="hljs-string">"; gate_login_token="</span><span class="hljs-string">"; _putrc="</span><span class="hljs-string">"; LGRID=20180315120231-af2665e9-2805-11e8-b212-525400f775ce; Hm_lpvt_4233e74dff0ae5bd0a3d81c6ccf756e6=1521086551; SEARCH_ID=3a699c076cea44bb92ebd0bd7db821f0"</span>,    <span class="hljs-string">'Host'</span>: <span class="hljs-string">"www.lagou.com"</span>,    <span class="hljs-string">'Origin'</span>: <span class="hljs-string">"https://www.lagou.com"</span>,    <span class="hljs-string">'Referer'</span>: <span class="hljs-string">"https://www.lagou.com/jobs/list_python?city=%E5%85%A8%E5%9B%BD&amp;cl=false&amp;fromSearch=true&amp;labelWords=&amp;suginput="</span>,    <span class="hljs-string">'User-Agent'</span>: <span class="hljs-string">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36"</span>,    <span class="hljs-string">'X-Anit-Forge-Code'</span>: <span class="hljs-string">"0"</span>,    <span class="hljs-string">'X-Anit-Forge-Token'</span>: <span class="hljs-string">"None"</span>,    <span class="hljs-string">'X-Requested-With'</span>: <span class="hljs-string">"XMLHttpRequest"</span>&#125;all_info = []kd = <span class="hljs-string">"python"</span>csv_name = <span class="hljs-string">'sh_ops'</span><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_page_num</span><span class="hljs-params">(url, header)</span>:</span><span class="hljs-string">'''获取招聘页数'''</span>    form = &#123;        <span class="hljs-string">'first'</span>: <span class="hljs-string">"true"</span>,        <span class="hljs-string">"pn"</span>: str(<span class="hljs-number">1</span>),        <span class="hljs-string">"kd"</span>: kd    &#125;    html = requests.post(url, form, headers=header)    <span class="hljs-comment"># pprint(html.text)</span>    page_num = (html.json()[<span class="hljs-string">'content'</span>][<span class="hljs-string">'positionResult'</span>][<span class="hljs-string">'totalCount'</span>]) / <span class="hljs-number">15</span>    <span class="hljs-comment"># 页面最多显示30个,所以我们限定一下</span>    <span class="hljs-keyword">if</span> page_num &gt; <span class="hljs-number">30</span>:        <span class="hljs-keyword">return</span> <span class="hljs-number">30</span>    <span class="hljs-keyword">else</span>:        <span class="hljs-keyword">return</span> int(page_num)<span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> range(<span class="hljs-number">1</span>, get_page_num(url, header) + <span class="hljs-number">1</span>):    <span class="hljs-comment"># 表单信息</span>    form = &#123;        <span class="hljs-string">'first'</span>: <span class="hljs-string">"true"</span>,        <span class="hljs-string">"pn"</span>: str(n),        <span class="hljs-string">"kd"</span>: kd    &#125;    time.sleep(random.randint(<span class="hljs-number">3</span>, <span class="hljs-number">6</span>))    <span class="hljs-comment"># 发送post请求，提交表单</span>    html = requests.post(url, form, headers=header)    <span class="hljs-comment"># pprint(html.text)</span>    <span class="hljs-comment"># 抓取的职位信息</span>    position_results = html.json()[<span class="hljs-string">'content'</span>][<span class="hljs-string">'positionResult'</span>][<span class="hljs-string">'result'</span>]    <span class="hljs-comment"># 这个字段不为True代表数据获取失败</span>    <span class="hljs-keyword">if</span> html.json()[<span class="hljs-string">'success'</span>] == <span class="hljs-literal">True</span>:        <span class="hljs-keyword">for</span> result <span class="hljs-keyword">in</span> position_results:            <span class="hljs-comment"># 遍历单页中单个职位的内容</span>            info = &#123;&#125;            info[<span class="hljs-string">'城市'</span>] = result[<span class="hljs-string">'city'</span>]            info[<span class="hljs-string">'区域'</span>] = result[<span class="hljs-string">'district'</span>]            info[<span class="hljs-string">'职位名称'</span>] = result[<span class="hljs-string">'positionName'</span>]            info[<span class="hljs-string">'工作年限'</span>] = result[<span class="hljs-string">'workYear'</span>]            info[<span class="hljs-string">'教育程度'</span>] = result[<span class="hljs-string">'education'</span>]            info[<span class="hljs-string">'工作性质'</span>] = result[<span class="hljs-string">'jobNature'</span>]            info[<span class="hljs-string">'薪资'</span>] = result[<span class="hljs-string">'salary'</span>]            info[<span class="hljs-string">'公司性质'</span>] = result[<span class="hljs-string">'financeStage'</span>]            info[<span class="hljs-string">'公司行业'</span>] = result[<span class="hljs-string">'industryField'</span>]            info[<span class="hljs-string">'公司规模'</span>] = result[<span class="hljs-string">'companySize'</span>]            info[<span class="hljs-string">'公司短名称'</span>] = result[<span class="hljs-string">'companyShortName'</span>]            info[<span class="hljs-string">'类型'</span>] = result[<span class="hljs-string">'firstType'</span>]            info[<span class="hljs-string">'定位'</span>] = result[<span class="hljs-string">'secondType'</span>]            info[<span class="hljs-string">'公司全名'</span>] = result[<span class="hljs-string">'companyFullName'</span>]            info[<span class="hljs-string">'URL'</span>] = <span class="hljs-string">r'https://www.lagou.com/jobs/&#123;0&#125;.html'</span>.format(result[<span class="hljs-string">'positionId'</span>])            all_info.append(info)        print(<span class="hljs-string">"第&#123;0&#125;页好了"</span>.format(n))    <span class="hljs-keyword">else</span>:        print(<span class="hljs-string">'Error'</span>)        sys.exit(<span class="hljs-number">1</span>)data = pd.DataFrame(all_info)<span class="hljs-comment"># 使用pandas,导出到csv文件中</span>data.to_csv(<span class="hljs-string">r'd:\Users\xddd\Documents\GitHub\python_spider\spider_series\&#123;0&#125;.csv'</span>.format(csv_name),            index=<span class="hljs-literal">False</span>, mode=<span class="hljs-string">'w+'</span>, encoding=<span class="hljs-string">'utf_8_sig'</span>)</code></pre><p>效果图</p><img src="/2018/03/23/27-getLagou/spider_lagou.jpg" srcset="/img/loading.gif" class="" title="这是最终结果">]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>使用kubeadm创建k8s集群</title>
+    <link href="/2018/03/10/26-kubadmCreatK8s-md/"/>
+    <url>/2018/03/10/26-kubadmCreatK8s-md/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>kubeadm是Kubernetes官方提供的快速安装和初始化Kubernetes集群的工具<br>大大简化了部署的难度，参照前人的经验，自己动手实现了一番<br>唯一的困难镜像在国外，你懂的</p>          </div><a id="more"></a><h2 id="使用kubeadm创建k8s集群"><a href="#使用kubeadm创建k8s集群" class="headerlink" title="使用kubeadm创建k8s集群"></a>使用kubeadm创建k8s集群</h2><h3 id="1-硬件情况"><a href="#1-硬件情况" class="headerlink" title="1. 硬件情况"></a>1. 硬件情况</h3><p>virtual Box 虚拟机两台<br>系统：centos7.4</p><table><thead><tr><th align="left">Role</th><th align="right">Nums</th><th align="center">配置</th><th align="center">IP</th><th align="center">主机名</th></tr></thead><tbody><tr><td align="left">master</td><td align="right">1</td><td align="center">1核2G</td><td align="center">192.168.90.89</td><td align="center">master</td></tr><tr><td align="left">node</td><td align="right">1</td><td align="center">1核2G</td><td align="center">192.168.90.228</td><td align="center">node1</td></tr></tbody></table><p>写入<code>/etc/hosts</code>,两台</p><pre><code class="hljs plain">192.168.90.89 master192.168.90.228 node1</code></pre><h4 id="1-1配置代理"><a href="#1-1配置代理" class="headerlink" title="1.1配置代理"></a>1.1配置代理</h4><p><strong>参考:</strong></p><a href="/2018/03/10/25-centos7Proxy-md/" title="Centos7配置代理">Centos7配置代理</a><h4 id="1-2系统设置"><a href="#1-2系统设置" class="headerlink" title="1.2系统设置"></a>1.2系统设置</h4><ol><li><p>搭建测试环境,关闭防火墙</p><ul><li><code>systemctl stop firewalld</code></li><li><code>systemctm disable firewalld</code></li></ul></li><li><p>关闭swap空间</p><ul><li><code>swapoff -a</code>    </li><li>修改<code>/etc/fstab</code>,注释掉swap自动挂载</li></ul></li><li><p>关闭selinux</p><ul><li><code>vim /etc/sysconfig/selinux</code>,修改成<code>disabled</code></li><li><code>setenforce 0</code></li></ul></li><li><p>配置yum源</p><pre><code class="hljs bash"><span class="hljs-comment"># k8s</span>cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo[kubernetes]name=Kubernetesbaseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64enabled=1gpgcheck=1repo_gpgcheck=1gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpgEOF<span class="hljs-comment">#yum源,可以使用aliyun的,也可以使用自带的centos.org</span></code></pre></li></ol><blockquote><p><strong>特别注意:</strong><br>如果你安装的是k8s 1.9,不要修改docker和kubelet的cgroup驱动,改了反而报错</p></blockquote><h4 id="1-3调整内核参数"><a href="#1-3调整内核参数" class="headerlink" title="1.3调整内核参数"></a>1.3调整内核参数</h4><pre><code class="hljs bash">$ cat &lt;&lt;EOF &gt;  /etc/sysctl.d/k8s.confnet.bridge.bridge-nf-call-ip6tables = 1net.bridge.bridge-nf-call-iptables = 1EOF<span class="hljs-comment">#执行</span>sysctl --system</code></pre><h3 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h3><p>都需安装docker, kubeadm, kubelet和kubectl<br>使用的下面版本:</p><pre><code class="hljs bash">kubeadm-1.9.2-0.x86_64kubectl-1.9.2-0.x86_64kubelet-1.9.2-0.x86_64docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64</code></pre><h4 id="2-1首先安装docker"><a href="#2-1首先安装docker" class="headerlink" title="2.1首先安装docker"></a>2.1首先安装docker</h4><pre><code class="hljs bash">yum install -y dockersystemctl <span class="hljs-built_in">enable</span> docker systemctl start docker</code></pre><p>因为很多镜像在google上面的,所以<strong>docker也需要配置代理</strong><br>根据官网的文档:<a href="https://docs.docker.com/engine/admin/systemd/#httphttps-proxy" target="_blank" rel="noopener">连接</a></p><p>1.为docker服务创建一个systemd的drop-in目录：</p><pre><code class="hljs bash">mkdir -p /etc/systemd/system/docker.service.d</code></pre><p>2.创建一个名为<code>/etc/systemd/system/docker.service.d/http-proxy.conf</code>的文件，该文件添加了<code>http_proxy</code>环境变量：</p><pre><code class="hljs bash">[Service]Environment=<span class="hljs-string">"HTTPS_PROXY=https://127.0.0.1:8118/"</span> <span class="hljs-string">"NO_PROXY=localhost,172.16.0.0/16,192.168.0.0/16,127.0.0.1,10.10.0.0/16,10.244.0.0/16"</span></code></pre><p>3.刷新更改：</p><pre><code class="hljs bash">systemctl daemon-reload</code></pre><p>4.重启Docker:</p><pre><code class="hljs bash">systemctl restart docker</code></pre><p>5.验证结果是否加载:</p><pre><code class="hljs bash">$ systemctl show --property=Environment docker |moreEnvironment=GOTRACEBACK=crash DOCKER_HTTP_HOST_COMPAT=1 PATH=/usr/libexec/docker:/usr/bin:/usr/sbin HTTPS_PROXY=https://127.0.0.1:8118/ NO_PROXY=localhost,172.16.0.0/16,192.168.0.0/16,127.0.0.1,10.10.0.0/16,10.244.0.0/16</code></pre><h4 id="2-2安装kubeadm-kubelet和kubectl"><a href="#2-2安装kubeadm-kubelet和kubectl" class="headerlink" title="2.2安装kubeadm, kubelet和kubectl"></a>2.2安装kubeadm, kubelet和kubectl</h4><p>使用yum安装:</p><pre><code class="hljs bash">yum install -y kubelet kubeadm kubectlsystemctl <span class="hljs-built_in">enable</span> kubelet &amp;&amp; sudo systemctl start kubelet</code></pre><p>以上操作需要在，<strong>所有</strong>机器上安装。</p><h3 id="3-配置Msater节点"><a href="#3-配置Msater节点" class="headerlink" title="3. 配置Msater节点"></a>3. 配置Msater节点</h3><p>通过kubeadm init命令来初始化，指定kubernetes版本，并设置pod-network-cidr(使用哪种network addon),这里我们使用flannel,<code>为了flannel正确工作，--pod-network-cidr=10.244.0.0/16必须传递给kubeadm init</code></p><pre><code class="hljs bash">$ kubeadm init --kubernetes-version=v1.9.0 --pod-network-cidr=10.244.0.0/16</code></pre><blockquote><p>如果初始化失败,我们使用<code>kubeadm reset</code>重置一下<br><code>kubeadm init</code>将首先运行一系列预先检查，以确保机器准备运行Kubernetes。它会暴露警告并退出错误。然后它将下载并安装集群数据库和Image组件。</p></blockquote><p>我们会看到如下输出:</p><pre><code class="hljs bash">[root@master ~]<span class="hljs-comment"># kubeadm init --kubernetes-version=v1.9.0 --pod-network-cidr=10.244.0.0/16</span>[init] Using Kubernetes version: v1.9.0[init] Using Authorization modes: [Node RBAC][preflight] Running pre-flight checks.        [WARNING FileExisting-crictl]: crictl not found <span class="hljs-keyword">in</span> system path        [WARNING HTTPProxy]: Connection to <span class="hljs-string">"https://192.168.90.89:6443"</span> uses proxy <span class="hljs-string">"http://127.0.0.1:8118"</span>. If that is not intended, adjust your proxy settings        [WARNING HTTPProxyCIDR]: connection to <span class="hljs-string">"10.96.0.0/12"</span> uses proxy <span class="hljs-string">"http://127.0.0.1:8118"</span>. This may lead to malfunctional cluster setup. Make sure that Pod and Services IP ranges specified correctly as exceptions <span class="hljs-keyword">in</span> proxy configuration[preflight] Starting the kubelet service[certificates] Generated ca certificate and key.[certificates] Generated apiserver certificate and key.[certificates] apiserver serving cert is signed <span class="hljs-keyword">for</span> DNS names [master kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.90.89][certificates] Generated apiserver-kubelet-client certificate and key.[certificates] Generated sa key and public key.[certificates] Generated front-proxy-ca certificate and key.[certificates] Generated front-proxy-client certificate and key.[certificates] Valid certificates and keys now exist <span class="hljs-keyword">in</span> <span class="hljs-string">"/etc/kubernetes/pki"</span>[kubeconfig] Wrote KubeConfig file to disk: <span class="hljs-string">"admin.conf"</span>[kubeconfig] Wrote KubeConfig file to disk: <span class="hljs-string">"kubelet.conf"</span>[kubeconfig] Wrote KubeConfig file to disk: <span class="hljs-string">"controller-manager.conf"</span>[kubeconfig] Wrote KubeConfig file to disk: <span class="hljs-string">"scheduler.conf"</span>[controlplane] Wrote Static Pod manifest <span class="hljs-keyword">for</span> component kube-apiserver to <span class="hljs-string">"/etc/kubernetes/manifests/kube-apiserver.yaml"</span>[controlplane] Wrote Static Pod manifest <span class="hljs-keyword">for</span> component kube-controller-manager to <span class="hljs-string">"/etc/kubernetes/manifests/kube-controller-manager.yaml"</span>[controlplane] Wrote Static Pod manifest <span class="hljs-keyword">for</span> component kube-scheduler to <span class="hljs-string">"/etc/kubernetes/manifests/kube-scheduler.yaml"</span>[etcd] Wrote Static Pod manifest <span class="hljs-keyword">for</span> a <span class="hljs-built_in">local</span> etcd instance to <span class="hljs-string">"/etc/kubernetes/manifests/etcd.yaml"</span>[init] Waiting <span class="hljs-keyword">for</span> the kubelet to boot up the control plane as Static Pods from directory <span class="hljs-string">"/etc/kubernetes/manifests"</span>.[init] This might take a minute or longer <span class="hljs-keyword">if</span> the control plane images have to be pulled.[apiclient] All control plane components are healthy after 119.502833 seconds[uploadconfig] Storing the configuration used <span class="hljs-keyword">in</span> ConfigMap <span class="hljs-string">"kubeadm-config"</span> <span class="hljs-keyword">in</span> the <span class="hljs-string">"kube-system"</span> Namespace[markmaster] Will mark node master as master by adding a label and a taint[markmaster] Master master tainted and labelled with key/value: node-role.kubernetes.io/master=<span class="hljs-string">""</span>[bootstraptoken] Using token: dcc11d.57ec9e4959b413d4[bootstraptoken] Configured RBAC rules to allow Node Bootstrap tokens to post CSRs <span class="hljs-keyword">in</span> order <span class="hljs-keyword">for</span> nodes to get long term certificate credentials[bootstraptoken] Configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token[bootstraptoken] Configured RBAC rules to allow certificate rotation <span class="hljs-keyword">for</span> all node client certificates <span class="hljs-keyword">in</span> the cluster[bootstraptoken] Creating the <span class="hljs-string">"cluster-info"</span> ConfigMap <span class="hljs-keyword">in</span> the <span class="hljs-string">"kube-public"</span> namespace[addons] Applied essential addon: kube-dns[addons] Applied essential addon: kube-proxyYour Kubernetes master has initialized successfully!To start using your cluster, you need to run the following as a regular user:  mkdir -p <span class="hljs-variable">$HOME</span>/.kube  sudo cp -i /etc/kubernetes/admin.conf <span class="hljs-variable">$HOME</span>/.kube/config  sudo chown $(id -u):$(id -g) <span class="hljs-variable">$HOME</span>/.kube/configYou should now deploy a pod network to the cluster.Run <span class="hljs-string">"kubectl apply -f [podnetwork].yaml"</span> with one of the options listed at:  https://kubernetes.io/docs/concepts/cluster-administration/addons/You can now join any number of machines by running the following on each nodeas root:  kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash sha256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</code></pre><p>我们看到最后有一串:</p><pre><code class="hljs bash">kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash 256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</code></pre><p>这是node节点加入集群,需要使用到的</p><h4 id="3-1-配置kubeconfig"><a href="#3-1-配置kubeconfig" class="headerlink" title="3.1 配置kubeconfig"></a>3.1 配置kubeconfig</h4><pre><code class="hljs bash"><span class="hljs-built_in">export</span> KUBECONFIG=/etc/kubernetes/admin.conf<span class="hljs-built_in">echo</span> <span class="hljs-string">"export KUBECONFIG=/etc/kubernetes/admin.conf"</span> &gt;&gt; /etc/profile</code></pre><h4 id="3-2-安装网络插件"><a href="#3-2-安装网络插件" class="headerlink" title="3.2 安装网络插件"></a>3.2 安装网络插件</h4><p>必须安装pod网络插件，以便pod可以相互通信。</p><pre><code class="hljs bash">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml</code></pre><p>一旦安装了pod网络，通过检查kube-dns pod 是否正在运行来确认它是否在工作<br><code>kubectl get pods --all-namespaces</code>一旦kube-dns pod 启动并运行，我们就可以添加node了</p><pre><code class="hljs bash">[root@master ~]<span class="hljs-comment"># kubectl get pods --all-namespaces        </span>NAMESPACE     NAME                             READY     STATUS    RESTARTS   AGEkube-system   etcd-master                      1/1       Running   0          8hkube-system   kube-apiserver-master            1/1       Running   0          8hkube-system   kube-controller-manager-master   1/1       Running   0          8hkube-system   kube-dns-6f4fd4bdf-jwzn4         3/3       Running   0          8hkube-system   kube-flannel-ds-n74md            1/1       Running   0          8hkube-system   kube-flannel-ds-vdtdd            1/1       Running   2          3hkube-system   kube-proxy-clw4n                 1/1       Running   0          8hkube-system   kube-proxy-qpwq4                 1/1       Running   0          3hkube-system   kube-scheduler-master            1/1       Running   0          8h</code></pre><p>到这里,master就配置完成了.</p><h3 id="4-node加入集群"><a href="#4-node加入集群" class="headerlink" title="4. node加入集群"></a>4. node加入集群</h3><p>登陆node1,执行下面命令:</p><pre><code class="hljs bash">kubeadm join --token dcc11d.57ec9e4959b413d4 192.168.90.89:6443 --discovery-token-ca-cert-hash 256:7efc53fc16245ba8fe6d133ac1fed91cb2df50dcc270bbf325a628ef9e8dd61a</code></pre><p>顺利的话可以看到类似如下的提示:</p><pre><code class="hljs bash">Run <span class="hljs-string">'kubectl get nodes'</span> on the master to see this node join the cluster.</code></pre><p>我们回到master执行命令查看:</p><pre><code class="hljs bash">[root@master ~]<span class="hljs-comment"># kubectl get nodes</span>NAME      STATUS    ROLES     AGE       VERSIONmaster    Ready     master    8h        v1.9.2node1     Ready     &lt;none&gt;    3h        v1.9.2</code></pre><p>可以看到节点已经加入了，并且是正常的ready状态。<br>至此，整个集群的配置完成，可以开始使用了。</p><hr><h3 id="资料"><a href="#资料" class="headerlink" title="资料"></a>资料</h3><p>感谢文章作者给予参考借鉴<br><a href="http://blog.csdn.net/u012375924/article/details/78987263" target="_blank" rel="noopener">使用kubeadm部署k8s 1.9</a></p><h3 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h3><ol><li>时间不同步,导致kubeadm  join失败</li><li>提示报错<code>The connection to the server localhost:8080 was refused - did you specify the right host or port?</code></li><li>在node节点执行<code>kubectl get pods -n kube-system</code>报错,和上面一致</li><li>token过期<br>创建永不过期的token<br><code>kubeadm token create --ttl 0</code><br><code>kubeadm list</code><br><a href="https://blog.frognew.com/2017/01/kubernetes-master-and-node.html" target="_blank" rel="noopener">k8s的master和node节点</a></li></ol>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Centos7配置代理</title>
+    <link href="/2018/03/10/25-centos7Proxy-md/"/>
+    <url>/2018/03/10/25-centos7Proxy-md/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>Privoxy 只是一个HTTP代理。<br>Privoxy 自己并【没有】对应的“代理服务器”。<br>它仅仅是一款“客户端的代理工具”。<br>你自己需要有服务器</p>          </div><a id="more"></a><h3 id="安装shadowsocks"><a href="#安装shadowsocks" class="headerlink" title="安装shadowsocks"></a>安装shadowsocks</h3><p><code>pip install shadowsocks</code></p><p><strong>配置 vim /etc/shadowsocks</strong></p><pre><code class="hljs bash">&#123;  <span class="hljs-string">"server"</span>:<span class="hljs-string">"6.2.5.22"</span>,     <span class="hljs-comment"># 你的那个服务器 </span>  <span class="hljs-string">"server_port"</span>:9528,            <span class="hljs-comment"># 提供服务的端口</span>  <span class="hljs-string">"local_address"</span>: <span class="hljs-string">"127.0.0.1"</span>,    <span class="hljs-string">"local_port"</span>:1080,               <span class="hljs-string">"password"</span>:<span class="hljs-string">"test@123.com"</span>,   <span class="hljs-comment"># 密码   </span>  <span class="hljs-string">"timeout"</span>:300,                   <span class="hljs-string">"method"</span>:<span class="hljs-string">"aes-256-cfb"</span>,          <span class="hljs-string">"workers"</span>: 1                   &#125;</code></pre><p><strong>执行启动shadowsocks</strong></p><pre><code class="hljs bash">nohup sslocal -c /etc/shadowsocks.json  &amp;</code></pre><p><strong>测试</strong></p><p>运行 <code>curl --socks5 127.0.0.1:1985 http://httpbin.org/ip</code>如果返回你的 ss 服务器 ip 则测试成功：</p><pre><code class="hljs bash">&#123;  <span class="hljs-string">"origin"</span>: <span class="hljs-string">"x.x.x.x"</span>       <span class="hljs-comment">#你的 ss 服务器 ip</span>&#125;</code></pre><h3 id="下面安装Privoxy"><a href="#下面安装Privoxy" class="headerlink" title="下面安装Privoxy"></a>下面安装Privoxy</h3><p><code>Privoxy</code> 强烈不建议使用<code>root</code>用户运行，所以我们使用<code>useradd privoxy</code>新建一个用户.</p><p><strong>进入privoxy目录</strong></p><pre><code class="hljs bash">autoheader &amp;&amp; autoconf./configuremake &amp;&amp; make install</code></pre><p><strong>修改配置</strong></p><pre><code class="hljs bash">vim /usr/<span class="hljs-built_in">local</span>/etc/privoxy/config<span class="hljs-comment"># 找到以下两句，确保没有注释掉</span>listen-address 127.0.0.1:8118   <span class="hljs-comment"># 8118 是默认端口，不用改，下面会用到  783行</span>forward-socks5t / 127.0.0.1:1080 . <span class="hljs-comment"># 这里的端口写 shadowsocks 的本地端口（注意最后那个 . 不要漏了）  1336行</span></code></pre><p><strong>启动</strong></p><pre><code class="hljs bash">privoxy --user privoxy /usr/<span class="hljs-built_in">local</span>/etc/privoxy/config</code></pre><h3 id="配置启动环境变量"><a href="#配置启动环境变量" class="headerlink" title="配置启动环境变量"></a>配置启动环境变量</h3><pre><code class="hljs bash">vim /etc/profile<span class="hljs-built_in">export</span> http_proxy=http://127.0.0.1:8118    <span class="hljs-comment">#这里的端口和上面 privoxy 中的保持一致</span><span class="hljs-built_in">export</span> https_proxy=http://127.0.0.1:8118<span class="hljs-built_in">source</span> /etc/profilecurl www.google.com</code></pre><h3 id="电脑重启执行-可以写入到rc-local中"><a href="#电脑重启执行-可以写入到rc-local中" class="headerlink" title="电脑重启执行(可以写入到rc.local中)"></a>电脑重启执行(可以写入到<code>rc.local</code>中)</h3><pre><code class="hljs bash">nohup sslocal -c /etc/shadowsocks.json &amp;privoxy --user privoxy /usr/<span class="hljs-built_in">local</span>/etc/privoxy/config</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>监控mongos连接数(python,shell)</title>
+    <link href="/2018/03/10/24-mongoCon-md/"/>
+    <url>/2018/03/10/24-mongoCon-md/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>connections 当前连接和可用连接数，mongodb最大处理到2000个连接就不行了（要根据你的机器性能和业务来设定），所以设大了没意义。设个合理值的话，到达这个值mongodb就拒绝新的连接请求，避免被太多的连接拖垮。<br>分别使用Python和shell来实现,加入到zabbix监控模板中</p>          </div><a id="more"></a><p><strong>需要安装pymongo</strong></p><pre><code class="hljs plain">pip install pymongo</code></pre><p><strong>进入命令行获取到得是这种格式</strong></p><pre><code class="hljs plain">mongos&gt; db.serverStatus().connections&#123;        &quot;current&quot; : 525,        &quot;available&quot; : 523755,        &quot;totalCreated&quot; : NumberLong(555796)&#125;</code></pre><p><strong>python脚本的形式</strong></p><pre><code class="hljs python"><span class="hljs-comment">#!/usr/bin/env python</span><span class="hljs-comment"># coding: utf-8</span><span class="hljs-keyword">from</span> pymongo <span class="hljs-keyword">import</span> MongoClientclient = MongoClient(<span class="hljs-string">'localhost'</span>, <span class="hljs-number">30000</span>)db = client.dbconn = db.command(<span class="hljs-string">"serverStatus"</span>)[<span class="hljs-string">"connections"</span>][<span class="hljs-string">'current'</span>]client.close()<span class="hljs-keyword">print</span> conn</code></pre><p><strong>使用Shell的方式，不需要安装pymongo</strong></p><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/sh</span>conn=`mongo 127.0.0.1:20000 --<span class="hljs-built_in">eval</span> <span class="hljs-string">'printjson(db.serverStatus().connections)'</span> | grep -E <span class="hljs-string">'"current" : [0-9]*'</span>| grep -o <span class="hljs-string">'[0-9]*'</span>`<span class="hljs-built_in">echo</span> <span class="hljs-variable">$conn</span></code></pre><hr><p><strong>资料</strong><br><a href="https://stackoverflow.com/questions/34898723/how-to-get-output-of-db-serverstatus-connections-through-pymongo-in-python" target="_blank" rel="noopener">How to use pytmongo get connections</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>使用Bs4获取TOP250</title>
+    <link href="/2018/03/10/23-top250-md/"/>
+    <url>/2018/03/10/23-top250-md/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>使用python bs4获取豆瓣电影TOP250<br>使用xml也是可以的,但是xpath语法不是很直观,可读性差了点</p>          </div><a id="more"></a><pre><code class="hljs python"><span class="hljs-comment">#!/usr/bin/python</span><span class="hljs-comment"># -*- coding: utf-8 -*-</span><span class="hljs-keyword">import</span> requests<span class="hljs-keyword">import</span> time<span class="hljs-keyword">import</span> openpyxl<span class="hljs-keyword">from</span> bs4 <span class="hljs-keyword">import</span> BeautifulSouphead = &#123;&#125;head[<span class="hljs-string">'User-Agent'</span>] = <span class="hljs-string">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "</span> \                     <span class="hljs-string">"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"</span><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">getFilmInfo</span><span class="hljs-params">(url)</span>:</span>    req = requests.get(url)    soup = BeautifulSoup(req.content, <span class="hljs-string">'html.parser'</span>)    tops = soup.find_all(<span class="hljs-string">'div'</span>, class_=<span class="hljs-string">'info'</span>)    <span class="hljs-keyword">global</span> n    <span class="hljs-keyword">with</span> open(<span class="hljs-string">'豆瓣TOP250.txt'</span>, <span class="hljs-string">'a'</span>, encoding=<span class="hljs-string">'utf-8'</span>) <span class="hljs-keyword">as</span> f:        <span class="hljs-keyword">for</span> top <span class="hljs-keyword">in</span> tops:            film_title = top.find(class_=<span class="hljs-string">'title'</span>).text            film_type = top.find(class_=<span class="hljs-string">'bd'</span>).p.text.strip().replace(<span class="hljs-string">" "</span>, <span class="hljs-string">""</span>).replace(<span class="hljs-string">"\n"</span>, <span class="hljs-string">""</span>)            film_star = top.find(<span class="hljs-string">'span'</span>, class_=<span class="hljs-string">"rating_num"</span>).text            <span class="hljs-keyword">try</span>:                film_quote = top.find(class_=<span class="hljs-string">'inq'</span>).text            <span class="hljs-keyword">except</span> AttributeError:                film_quote = <span class="hljs-string">"没有一句话概括"</span>            info = <span class="hljs-string">"TOP&#123;0&#125;\n电影名称:&#123;1&#125;\n电影星级:&#123;2&#125;\n电影类型:&#123;3&#125;\n一句话点评:&#123;4&#125;\n==========\n"</span>.format(n, film_title,                                                                                          film_star, film_type,                                                                                          film_quote)            f.write(info)            n += <span class="hljs-number">1</span><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">'__main__'</span>:    opts = range(<span class="hljs-number">10</span>)    n = <span class="hljs-number">1</span>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> opts:        url = <span class="hljs-string">'https://movie.douban.com/top250?start=&#123;0&#125;&amp;filter='</span>.format(i * <span class="hljs-number">25</span>)        <span class="hljs-comment"># print(url)</span>        getFilmInfo(url)        <span class="hljs-comment"># 程序暂停2秒</span>        time.sleep(<span class="hljs-number">2</span>)</code></pre><p><strong>结果(后期改为写入excel)：</strong></p><pre><code class="hljs plain">TOP1电影名称:肖申克的救赎电影星级:9.6电影类型:导演:弗兰克·德拉邦特FrankDarabont   主演:蒂姆·罗宾斯TimRobbins&#x2F;...1994 &#x2F; 美国 &#x2F; 犯罪剧情一句话点评:希望让人自由。***********TOP2电影名称:霸王别姬电影星级:9.5电影类型:导演:陈凯歌KaigeChen   主演:张国荣LeslieCheung&#x2F;张丰毅FengyiZha...1993 &#x2F; 中国大陆香港 &#x2F; 剧情爱情同性一句话点评:风华绝代。***********TOP3电影名称:这个杀手不太冷电影星级:9.4电影类型:导演:吕克·贝松LucBesson   主演:让·雷诺JeanReno&#x2F;娜塔莉·波特曼...1994 &#x2F; 法国 &#x2F; 剧情动作犯罪一句话点评:怪蜀黍和小萝莉不得不说的故事。***********...............TOP250电影名称:廊桥遗梦电影星级:8.6电影类型:导演:克林特·伊斯特伍德ClintEastwood   主演:克林特·伊斯特伍德Clint...1995 &#x2F; 美国 &#x2F; 剧情爱情一句话点评:这样确切的爱，一生只有一次。</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>记一次su - &lt;username&gt;需要密码</title>
+    <link href="/2018/03/09/22-su-md/"/>
+    <url>/2018/03/09/22-su-md/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <h4 id="故障描述"><a href="#故障描述" class="headerlink" title="故障描述:"></a>故障描述:</h4><p>  服务器在一次重启后，发现<code>root</code>使用 <code>su - (本机任意用户)</code>需要密码</p>          </div><a id="more"></a><h4 id="涉及排查的日志"><a href="#涉及排查的日志" class="headerlink" title="涉及排查的日志:"></a>涉及排查的日志:</h4><pre><code class="hljs bash">cat /etc/pam.d/sucat /etc/pam.d/system-authcat /etc/pam.d/password-authcat /home/qqdz/.bashrccat /home/qqdz/.bash_profileless /var/<span class="hljs-built_in">log</span>/messages<span class="hljs-comment"># 下面是发现问题的重要日志</span>less /var/<span class="hljs-built_in">log</span>/audit/audit.logtailf /var/<span class="hljs-built_in">log</span>/securecat /etc/profile</code></pre><h4 id="主要的报错信息"><a href="#主要的报错信息" class="headerlink" title="主要的报错信息:"></a>主要的报错信息:</h4><pre><code class="hljs bash"><span class="hljs-comment"># tailf /var/log/audit/audit.log</span><span class="hljs-built_in">type</span>=USER_AUTH msg=audit(1520490151.355:3436): pid=66888 uid=0 auid=0 ses=106 msg=<span class="hljs-string">'op=PAM:authentication grantors=pam_rootok acct="qqdz" exe="/usr/bin/su" hostname=? addr=? terminal=pts/1 res=success'</span><span class="hljs-built_in">type</span>=USER_ACCT msg=audit(1520490151.355:3437): pid=66888 uid=0 auid=0 ses=106 msg=<span class="hljs-string">'op=PAM:accounting grantors=pam_succeed_if acct="qqdz" exe="/usr/bin/su" hostname=? addr=? terminal=pts/1 res=success'</span><span class="hljs-built_in">type</span>=CRED_ACQ msg=audit(1520490151.355:3438): pid=66888 uid=0 auid=0 ses=106 msg=<span class="hljs-string">'op=PAM:setcred grantors=pam_rootok acct="qqdz" exe="/usr/bin/su" hostname=? addr=? terminal=pts/1 res=success'</span><span class="hljs-built_in">type</span>=USER_START msg=audit(1520490151.357:3439): pid=66888 uid=0 auid=0 ses=106 msg=<span class="hljs-string">'op=PAM:session_open grantors=pam_keyinit,pam_keyinit,pam_limits,pam_systemd,pam_unix,pam_xauth acct="qqdz" exe="/usr/bin/su" hostname=? addr=? terminal=pts/1 res=success'</span><span class="hljs-built_in">type</span>=USER_AUTH msg=audit(1520490153.285:3440): pid=66923 uid=1000 auid=0 ses=106 msg=<span class="hljs-string">'op=PAM:authentication grantors=? acct="root" exe="/usr/bin/su" hostname=? addr=? terminal=pts/1 res=failed'</span></code></pre><pre><code class="hljs bash"><span class="hljs-comment"># less /var/log/secure</span>Mar  8 13:11:57 qqdzz-Hadoop7 su: pam_unix(su<span class="hljs-_">-l</span>:session): session opened <span class="hljs-keyword">for</span> user ams by (uid=0)Mar  8 13:11:57 qqdzz-Hadoop7 su: pam_unix(su<span class="hljs-_">-l</span>:auth): auth could not identify password <span class="hljs-keyword">for</span> [root]Mar  8 13:11:57 qqdzz-Hadoop7 su: pam_succeed_if(su<span class="hljs-_">-l</span>:auth): requirement <span class="hljs-string">"uid &gt;= 1000"</span> not met by user <span class="hljs-string">"root"</span></code></pre><h4 id="分析现象"><a href="#分析现象" class="headerlink" title="分析现象:"></a>分析现象:</h4><p>发现疑点是在<code>audit.log</code>记录日志中，<code>su - qqdz</code>其实已经切换到了<code>qqdz</code>用户,加载了环境变量<br>但是又立即执行了 <code>su - root</code>，导致需要输入密码。<br>这个时候其实是不影响进入<code>qqdz</code>用户的，但是远程用户会很麻烦（本来是无秘钥登录，现在需要密码）</p><h4 id="找到原因"><a href="#找到原因" class="headerlink" title="找到原因:"></a>找到原因:</h4><p>与项目确认是有改过<code>/etc/profile</code>文件，导致切换用户会立即执行</p><p>项目在<code>/etc/profile(全局环境变量文件，用户登录以后立即加载)</code>中添加上了一个服务启动，必须要root用户执行</p><p>文件中有 ===&gt;  service ambari-agent start </p><h4 id="解决问题"><a href="#解决问题" class="headerlink" title="解决问题:"></a>解决问题:</h4><p>将<code>service ambari-agent start</code> 放入<code>rc.local</code>中,开机启动</p><h4 id="进一步分析"><a href="#进一步分析" class="headerlink" title="进一步分析:"></a>进一步分析:</h4><p>查看 ambari-agent 服务中的配置：</p><pre><code class="hljs bash"><span class="hljs-comment"># cat /etc/ambari-agent/conf/ambari-agent.ini    </span>[server]hostname=hadoop1-ambari-v2url_port=8440secured_url_port=8441[agent]prefix=/var/lib/ambari-agent/data;loglevel=(DEBUG/INFO)loglevel=INFOdata_cleanup_interval=86400data_cleanup_max_age=2592000data_cleanup_max_size_MB = 100ping_port=8670cache_dir=/var/lib/ambari-agent/cachetolerate_download_failures=<span class="hljs-literal">true</span>run_as_user=root   <span class="hljs-comment"># 本次故障受到这个选项影响</span>parallel_execution=0alert_grace_period=5alert_kinit_timeout=14400000system_resource_overrides=/etc/resource_overrides[security]keysdir=/var/lib/ambari-agent/keysserver_crt=ca.crtpassphrase_env_var_name=AMBARI_PASSPHRASE[services]pidLookupPath=/var/run/[heartbeat]state_interval=6<span class="hljs-built_in">dirs</span>=/etc/hadoop,/etc/hadoop/conf,/etc/hbase,/etc/hcatalog,/etc/hive,/etc/oozie,  /etc/sqoop,/etc/ganglia,  /var/run/hadoop,/var/run/zookeeper,/var/run/hbase,/var/run/templeton,/var/run/oozie,  /var/<span class="hljs-built_in">log</span>/hadoop,/var/<span class="hljs-built_in">log</span>/zookeeper,/var/<span class="hljs-built_in">log</span>/hbase,/var/run/templeton,/var/<span class="hljs-built_in">log</span>/hive; 0 - unlimitedlog_lines_count=300[logging]syslog_enabled=0</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Gitlab的迁移、安装及恢复</title>
+    <link href="/2018/02/18/21-Gitlab/"/>
+    <url>/2018/02/18/21-Gitlab/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>GitLab 是一个基于 git 的仓库管理程序，也是一个方便软件开发的强大完整应用。<br>在公司里搭建一套便于内部的代码管理，避免将代码暴露出去<br>本次项目需要进行迁移，记录本次操作，日后好回忆</p>          </div><a id="more"></a><p><strong>进行数据备份</strong></p><ul><li><code>gitlab-rake gitlab:backup:create</code></li></ul><p>执行这一条命令就会在默认备份目录生成按时间戳日期开头的备份tar包</p><pre><code class="hljs bash"><span class="hljs-comment"># ls /var/opt/gitlab/backups/</span>1507543656_2017_10_09_gitlab_backup.tar</code></pre><p><strong>备份文件目录</strong><br><code>/etc/gitlab/gitlab.rb</code> Gitlab的配置文件<br><code>/var/opt/gitlab/nginx/conf</code> Nginx的配置文件<br><code>/etc/postfix/main.cf</code> Postfix的配置文件<br><code>/var/opt/gitlab/postgresql</code> Postgresql的文件(和用户数据有关)</p><blockquote><p>我这里是将目录直接打包覆盖到新的</p></blockquote><p>可以通过<code>/etc/gitlab/gitlab.rb</code>配置文件来修改默认存放备份文件的目录<br><code>gitlab_rails[&#39;backup_path&#39;] = &quot;/var/opt/gitlab/backups&quot;</code></p><p><strong>实现自动备份</strong><br>每天2点自动执行一次</p><ul><li><code>0 2 * * * /opt/gitlab/bin/gitlab-rake gitlab:backup:create</code></li></ul><hr><h4 id="搭建新的Gitlab环境"><a href="#搭建新的Gitlab环境" class="headerlink" title="搭建新的Gitlab环境"></a>搭建新的Gitlab环境</h4><p><strong>安装依赖包和服务</strong></p><ul><li><code>yum install -y curl policycoreutils-python openssh-server cronie</code></li><li><code>yum install postfix</code></li><li><code>service postfix start</code></li><li><code>chkconfig postfix on</code></li></ul><p><strong>开启防火墙</strong></p><blockquote><p>最好做限制，因为是针对公司使用的，不对外开放</p></blockquote><ul><li><code>lokkit -s http -s ssh</code>  这里是暂且对外全开</li></ul><p><strong>安装下载Gitlab包</strong></p><blockquote><p>官网指导会安装EE版本(企业版)，公司自用就使用CE(社区版免费的)</p></blockquote><ul><li><code>curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash</code></li><li><code>yum install gitlab-ce</code></li></ul><blockquote><p>这里我安装的时候碰到一个问题，下载巨慢，好在谷歌搜到的解决办法，自己下载包，本地安装，感谢这位同学</p></blockquote><ol><li><a href="http://www.doocr.com/articles/58b15886f8694d05da412c89" target="_blank" rel="noopener">gitlab yum/apt安装很慢的解决办法</a></li><li><a href="https://packages.gitlab.com/gitlab/gitlab-ce" target="_blank" rel="noopener">GitlabRPM官网</a></li></ol><blockquote><p>下载好了以后，使用<code>yum localinstall package</code>即可</p></blockquote><p><strong>启动</strong></p><ul><li><code>gitlab-ctl reconfigure</code></li><li><code>gitlab-ctl status</code></li><li><code>gitlab-ctl stop</code></li><li><code>gitlab-ctl start</code></li></ul><hr><h4 id="恢复数据"><a href="#恢复数据" class="headerlink" title="恢复数据"></a>恢复数据</h4><blockquote><p><strong>重要提醒：</strong>Gitlab版本必须一致<br>查看方法：<br>1.<code>head -1 /opt/gitlab/version-manifest.txt</code><br>2.<code>cat /opt/gitlab/embedded/service/gitlab-rails/VERSION</code></p></blockquote><p><strong>导入之前备份的文件</strong><br>如果没有修改过默认配置，将备份的文件放到默认目录中<br><code>/var/opt/gitlab/backups/</code></p><p><strong>关闭服务</strong><br>停止相关数据连接服务<br><code>gitlab-ctl stop unicorn</code><br><code>gitlab-ctl stop sidekiq</code></p><p>停止相关服务<br><code>gitlab-ctl stop</code><br><code>gitlab-ctl stop nginx</code></p><p><strong>恢复数据</strong><br><code>gitlab-rake gitlab:backup:restore BACKUP=1507543656_2017_10_09</code></p><p><strong>启动即可</strong><br><code>gitlab-ctl start</code></p><hr><p>相关资料<br><a href="http://www.xuliangwei.com/xubusi/803.html" target="_blank" rel="noopener">Gitlab备份恢复迁移</a><br><a href="http://blog.csdn.net/samxx8/article/details/47448479" target="_blank" rel="noopener">Yum命令使用说明</a><br><a href="https://about.gitlab.com/installation/#centos-6" target="_blank" rel="noopener">Gitlab官网</a></p>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>ETCD alarm:NOSPACE 问题处理</title>
+    <link href="/2018/01/26/20-ETCD-problem/"/>
+    <url>/2018/01/26/20-ETCD-problem/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <blockquote><p>etcd需要定期压缩以截断它的历史。etcd将检查它的db是否超过了空间配额限制，在这种情况下，它将抛出这个错误。<br>要从这个错误中恢复，首先要进行压缩，然后进行碎片整理，最后解除配额警报。<a href="https://github.com/coreos/etcd/blob/master/Documentation/op-guide/maintenance.md#space-quota" target="_blank" rel="noopener">空间配额</a>文档有一个例子。</p></blockquote>          </div><a id="more"></a><p>默认的空间配额使用完了以后就会报这个错误<br><strong>etcdserver: mvcc: database space exceeded</strong></p><h4 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h4><p>因为ETCD每次的修改都会记录一次revision，方便回溯历史key记录，日积月累会越来越大<br>默认的后端配额是2G(最大可以设置到6G)</p><h4 id="确认警报信息"><a href="#确认警报信息" class="headerlink" title="确认警报信息"></a>确认警报信息</h4><pre><code class="hljs bash">$ etcdctl --endpoints=<span class="hljs-variable">$ENDPOINTS</span> alarm listmemberID:13803658152347727308 alarm:NOSPACE</code></pre><h4 id="设置后端配额-根据需要配置"><a href="#设置后端配额-根据需要配置" class="headerlink" title="设置后端配额(根据需要配置)"></a>设置后端配额(根据需要配置)</h4><p>设置一个很小的16MB的限额<br><code>etcd --quota-backend-bytes=$((16*1024*1024))</code></p><h4 id="获取当前的修订编号-reversion-，选取需要截断的历史"><a href="#获取当前的修订编号-reversion-，选取需要截断的历史" class="headerlink" title="获取当前的修订编号(reversion)，选取需要截断的历史"></a>获取当前的修订编号(reversion)，选取需要截断的历史</h4><p><code>rev=$(ETCDCTL_API=3 etcdctl --endpoints=:2379 endpoint status --write-out=&quot;json&quot; | egrep -o &#39;&quot;revision&quot;:[0-9]*&#39; | egrep -o &#39;[0-9]*&#39;)</code></p><h4 id="进行压缩"><a href="#进行压缩" class="headerlink" title="进行压缩"></a>进行压缩</h4><p><code>etcdctl --endpoints=$ENDPOINTS compact $rev</code></p><h4 id="整理后端数据-文件系统-，释放空间"><a href="#整理后端数据-文件系统-，释放空间" class="headerlink" title="整理后端数据(文件系统)，释放空间"></a>整理后端数据(文件系统)，释放空间</h4><p><code>etcdctl --endpoints=$ENDPOINTS defrag</code></p><h4 id="解除警报"><a href="#解除警报" class="headerlink" title="解除警报"></a>解除警报</h4><pre><code class="hljs bash">etcdctll --endpoints=<span class="hljs-variable">$ENDPOINTS</span> alarm disarm</code></pre><h4 id="在启动的时候加上参数进行自动压缩回收"><a href="#在启动的时候加上参数进行自动压缩回收" class="headerlink" title="在启动的时候加上参数进行自动压缩回收"></a>在启动的时候加上参数进行自动压缩回收</h4><p>加上这个参数以后会自动进行<code>compact</code>，只需要定时执行<code>defrag</code>即可<br>默认是周期性的，1为小时(最新的版本支持分钟级别的<code>compact</code>)<br><code>--auto-compaction-retention 1h</code><br><code>--auto-compaction-mode periodic|revision</code> </p><h4 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h4><p>官方建议最好通过周期性的压缩和碎片化整理来避免达到配额<br>而且没有自动触发<code>defrag</code>的机制，所以设置定时任务吧</p><hr><h4 id="资料"><a href="#资料" class="headerlink" title="资料"></a>资料</h4><p><a href="https://yuerblog.cc/2017/12/10/principle-about-etcd-v3/" target="_blank" rel="noopener">ETCD原理分析</a><br><a href="https://github.com/coreos/etcd/issues/7986" target="_blank" rel="noopener">mvcc error</a><br><a href="https://github.com/coreos/etcd/blob/master/Documentation/op-guide/configuration.md" target="_blank" rel="noopener">配置文件</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>db</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>etcd</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>MongoDB集群配置</title>
+    <link href="/2018/01/26/19-MongoDB-cluster/"/>
+    <url>/2018/01/26/19-MongoDB-cluster/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <img src="/2018/01/26/19-MongoDB-cluster/mongo.png" srcset="/img/loading.gif" class=""><p>从图中可以看到有四个组件：<code>mongos、config server、shard、replica set</code>。</p>          </div><a id="more"></a><p><strong>mongos</strong>，数据库集群请求的入口，所有的请求都通过mongos进行协调，不需要在应用程序添加一个路由选择器，mongos自己就是一个请求分发中心，它负责把对应的数据请求请求转发到对应的shard服务器上。在生产环境通常有多mongos作为请求的入口，防止其中一个挂掉所有的mongodb请求都没有办法操作。</p><p><strong>config server</strong>，顾名思义为配置服务器，存储所有数据库元信息（路由、分片）的配置。mongos本身没有物理存储分片服务器和数据路由信息，只是缓存在内存里，配置服务器则实际存储这些数据。mongos第一次启动或者关掉重启就会从 config server 加载配置信息，以后如果配置服务器信息变化会通知到所有的 mongos 更新自己的状态，这样 mongos 就能继续准确路由。在生产环境通常有多个 config server 配置服务器，因为它存储了分片路由的元数据，防止数据丢失！</p><p><strong>shard，分片（sharding）</strong>是指将数据库拆分，将其分散在不同的机器上的过程。将数据分散到不同的机器上，不需要功能强大的服务器就可以存储更多的数据和处理更大的负载。基本思想就是将集合切成小块，这些块分散到若干片里，每个片只负责总数据的一部分，最后通过一个均衡器来对各个分片进行均衡（数据迁移）。</p><p><strong>replica set</strong>，中文翻译副本集，其实就是shard的备份，防止shard挂掉之后数据丢失。复制提供了数据的冗余备份，并在多个服务器上存储数据副本，提高了数据的可用性， 并可以保证数据的安全性。</p><p><strong>仲裁者（Arbiter）</strong>，是复制集中的一个MongoDB实例，它并不保存数据。仲裁节点使用最小的资源并且不要求硬件设备，不能将Arbiter部署在同一个数据集节点中，可以部署在其他应用服务器或者监视服务器中，也可部署在单独的虚拟机中。为了确保复制集中有奇数的投票成员（包括primary），需要添加仲裁节点做为投票，否则primary不能运行时不会自动切换primary。</p><p>简单了解之后，我们可以这样总结一下，应用请求mongos来操作mongodb的增删改查，配置服务器存储数据库元信息，并且和mongos做同步，数据最终存入在shard（分片）上，为了防止数据丢失同步在副本集中存储了一份，仲裁在数据存储到分片的时候决定存储到哪个节点。</p><hr><p><strong>服务结构规划</strong></p><table><thead><tr><th align="center">mongo1</th><th align="center">mongo2</th><th align="center">mongo3</th></tr></thead><tbody><tr><td align="center">mongos</td><td align="center">mongos</td><td align="center">mongos</td></tr><tr><td align="center">config server</td><td align="center">config server</td><td align="center">config server</td></tr><tr><td align="center">shard server1 主节点</td><td align="center">shard server1 副节点</td><td align="center">shard server1 仲裁</td></tr><tr><td align="center">shard server2 仲裁</td><td align="center">shard server2 主节点</td><td align="center">shard server2 副节点</td></tr><tr><td align="center">shard server3 副节点</td><td align="center">shard server3 仲裁</td><td align="center">shard server3 主节点</td></tr></tbody></table><p><strong>mongo-ip</strong></p><pre><code class="hljs plain">mongo110.20.49.142mongo210.20.49.143mongo310.20.49.144</code></pre><p><strong>端口分配</strong></p><pre><code class="hljs plain">mongos：30000config：31000shard1：32001shard2：32002shard3：32003</code></pre><p><strong>创建目录</strong><br><code>mkdir -p config/data config/log mongos/data mongos/log shard1/data shard1/log shard2/data shard2/log shard3/data shard3/log</code></p><p><strong>安装mongodb</strong><br>安装mongodb很简单,官网下载包以后解压即可,将bin目录中的程序加入到环境变量</p><pre><code class="hljs bash">vim /etc/profile<span class="hljs-built_in">export</span> PATH=<span class="hljs-string">"<span class="hljs-variable">$PATH</span>:/usr/local/bin/mongo/"</span></code></pre><p><strong>每一台上启动config server服务</strong><br><code>mongod --configsvr --dbpath config/data --port 31000 --logpath config/log/config.log --fork</code></p><p><strong>每一台上启动分片服务</strong><br><code>mongod --shardsvr --replSet shard1 --port 32001 --dbpath shard1/data --logpath shard1/log/shard1.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTigermongod --shardsvr --replSet shard2 --port 32002 --dbpath shard2/data --logpath shard2/log/shard2.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTigermongod --shardsvr --replSet shard3 --port 32003 --dbpath shard3/data --logpath shard3/log/shard3.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTiger</code></p><p><strong>每一台上启动mongos服务</strong><br><code>mongos --configdb 10.20.49.142:31000,10.20.49.143:31000,10.20.49.144:31000  --port 30000   --logpath  mongos/log/mongos.log --fork</code></p><p><strong>配置副本集</strong></p><pre><code class="hljs plain">#第一台mongo1mongo 127.0.0.1:32001use test;db.dropDatabase();db.setProfilingLevel(1); use admin;config &#x3D; &#123; _id:&quot;shard1&quot;, members:[                     &#123;_id:0,host:&quot;10.20.49.142:32001&quot;&#125;,                     &#123;_id:1,host:&quot;10.20.49.143:32001&quot;&#125;,# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.144:22001&quot;,arbiterOnly:true&#125;                ]         &#125;;rs.initiate(config); #第二台mongo2mongo 127.0.0.1:32002use test;db.dropDatabase();db.setProfilingLevel(1); use admin;config &#x3D; &#123; _id:&quot;shard2&quot;, members:[                     &#123;_id:0,host:&quot;10.20.49.144:32002&quot;&#125;,                     &#123;_id:1,host:&quot;10.20.49.143:32002&quot;&#125;,# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.142:32002&quot;,arbiterOnly:true&#125;                ]         &#125;;rs.initiate(config);#第三台mongo3mongo 127.0.0.1:32003use test;db.dropDatabase();db.setProfilingLevel(1); use admin;config &#x3D; &#123; _id:&quot;shard3&quot;, members:[                     &#123;_id:0,host:&quot;10.20.49.144:32003&quot;&#125;,                     &#123;_id:1,host:&quot;10.20.49.142:32003&quot;&#125;,# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.143:32003&quot;,arbiterOnly:true&#125;                ]         &#125;;rs.initiate(config);</code></pre><p><strong>连接到mongos设置分片</strong></p><pre><code class="hljs plain">mongo 127.0.0.1:30000use admin;db.runCommand( &#123; addshard : &quot;shard1&#x2F;10.20.49.142:32001,10.20.49.143:32001&quot;&#125;);db.runCommand( &#123; addshard : &quot;shard2&#x2F;10.20.49.143:32002,10.20.49.144:32002&quot;&#125;);db.runCommand( &#123; addshard : &quot;shard3&#x2F;10.20.49.142:32003,10.20.49.144:32003&quot;&#125;);</code></pre><p><strong>添加仲裁节点</strong></p><blockquote><p>这里还需要单独添加仲裁成员的原因：<br>是因为在配置mongod shard角色的时候没有配置仲裁，如果前面启动配置了，这里不需要执行</p></blockquote><pre><code class="hljs plain">#第一台的仲裁节点在mongo3上mongo 127.0.0.1:32001rs.addArb(&quot;10.20.49.144:32001&quot;);#第二台的仲裁节点在mongo1上mongo 127.0.0.1:32002rs.addArb(&quot;10.20.49.142:32002&quot;);#第三台的仲裁节点在mongo2上mongo 127.0.0.1:32003rs.addArb(&quot;10.20.49.143:32003&quot;);</code></pre><p><strong>基本命令，查看、修改</strong></p><pre><code class="hljs bash"><span class="hljs-comment"># 查看谁是primary节点</span>rs.isMaster()<span class="hljs-comment"># 查看节点配置</span>rs.conf()<span class="hljs-comment"># 删除节点</span>rs.remove(<span class="hljs-string">"ip:port"</span>)<span class="hljs-comment"># 修改配置以后</span>rs.reconfig(config)</code></pre><hr><p><strong>备份以及还原</strong></p><pre><code class="hljs bash"><span class="hljs-comment">#导出所有的数据库</span>mongodump -h 127.0.0.1 -o /home/qqdz/mongobackup/171010-11<span class="hljs-comment">#导出指定数据库</span>mongodump -h 192.168.1.108 -d dbname -o /home/qqdz/mongobackup/171010-11/some_database<span class="hljs-comment">#恢复所有的数据库</span>mongorestore  /home/qqdz/mongobackup/171010-11<span class="hljs-comment">#恢复指定的数据库</span>mongorestore -d dbname /home/qqdz/mongobackup/171010-11/some_database</code></pre><hr><p><strong>相关资料：</strong><br><a href="http://www.ityouknow.com/mongodb/2017/08/05/mongodb-cluster-setup.html" target="_blank" rel="noopener">mongodb的分片和副本集搭建</a><br><a href="http://www.lanceyan.com/tech/arch/mongodb_shard1.html" target="_blank" rel="noopener">分片四</a><br><a href="http://blog.51yip.com/nosql/1573.html" target="_blank" rel="noopener">mongodb备份还原</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>db</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>mongodb</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Python正则表达式的5个小贴士</title>
+    <link href="/2017/12/23/18-python-rex/"/>
+    <url>/2017/12/23/18-python-rex/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>正则表达式是一个非常强大的处理字符工具，但有时可读性很差、晦涩难懂，Jamie Zawinski 说道：</p><blockquote><p>Some people, when confronted with a problem, think, “I know, I’ll use regular expressions.” Now they have two problems.</p></blockquote>          </div><p>本来是一个问题，引入正则表达式之后就成了两个问题。其实并不是任何场景都需要正则表达式。<br>在简单场景，能用字符串自己提供的方法解决问题就没必要用正则表达式，比如字符替换</p><a id="more"></a><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">import</span> re<span class="hljs-meta">&gt;&gt;&gt; </span>text = <span class="hljs-string">'java is most popular language'</span><span class="hljs-meta">&gt;&gt;&gt; </span>re.sub(<span class="hljs-string">r'java'</span>, <span class="hljs-string">'python'</span>, text)<span class="hljs-string">'python is most popular language'</span><span class="hljs-comment"># good</span><span class="hljs-meta">&gt;&gt;&gt; </span>text.replace(<span class="hljs-string">"java"</span>, <span class="hljs-string">"python"</span>)<span class="hljs-string">'python is most popular language'</span></code></pre><p>判断字符串是否以某字符开头</p><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>re.match(<span class="hljs-string">r"^java"</span>, text)&lt;_sre.SRE_Match object at <span class="hljs-number">0x000000000471D578</span>&gt;<span class="hljs-meta">&gt;&gt;&gt; </span>text.startwith(<span class="hljs-string">"java"</span>)<span class="hljs-comment"># good</span><span class="hljs-meta">&gt;&gt;&gt; </span>text.startswith(<span class="hljs-string">"java"</span>)<span class="hljs-literal">True</span></code></pre><p><strong>re.match()</strong> 与 <strong>re.search()</strong><br><code>re.match</code> 从字符串的起始位置匹配，如果没匹配成功就不再往后匹配，返回 None。而 search 虽然也是从起始位置开始匹配，但是如果在起始位置没有匹配，就继续往后匹配，直到匹配为止，如果匹配到字符串末尾都没有匹配则返回 None</p><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>text = <span class="hljs-string">"java is most popular langauge"</span><span class="hljs-meta">&gt;&gt;&gt; </span>re.match(<span class="hljs-string">"most"</span>, text) <span class="hljs-comment"># 没匹配</span><span class="hljs-comment"># bad</span><span class="hljs-meta">&gt;&gt;&gt; </span>re.match(<span class="hljs-string">".*most"</span>, text) &lt;_sre.SRE_Match object at <span class="hljs-number">0x0000000004CCD578</span>&gt;<span class="hljs-comment"># good</span><span class="hljs-meta">&gt;&gt;&gt; </span>re.search(<span class="hljs-string">"most"</span>, text)&lt;_sre.SRE_Match object at <span class="hljs-number">0x000000000471D578</span>&gt;</code></pre><p><strong>不分组的括号</strong><br>我们知道正则表达式中括号可以用于分组提取，有时我们并不希望括号用于分组该怎么办，答案是使用 <code>(?:)</code><br>看一个例子，用正则表达式提取URL中的各个组成部分</p><img src="/2017/12/23/18-python-rex/python-rex.png" srcset="/img/loading.gif" class=""><pre><code class="hljs python">rex = <span class="hljs-string">r'^(http[s]?)://([^/\s]+)([/\w\-\.]+[^#?\s]*)?(?:\?([^#]*))?(?:#(.*))?$'</span>print(re.match(rex, url).groups())<span class="hljs-meta">&gt;&gt;&gt; </span>(<span class="hljs-string">'http'</span>,     <span class="hljs-string">'www.example.com'</span>,      <span class="hljs-string">'/path/to/myfile.html'</span>,      <span class="hljs-string">'key1=value1&amp;key2=value2'</span>,      <span class="hljs-string">'SomewhereInTheDocument'</span>)</code></pre><p>上面虽然写了7对括号，但其实只有5个分组。下面是不使用<code>?:</code>，出现了 7 组数据</p><pre><code class="hljs python">rex = <span class="hljs-string">r'^(http[s]?)://([^/\s]+)([/\w\-\.]+[^#?\s]*)?(\?([^#]*))?(#(.*))?$'</span>print(re.match(rex, url).groups())&gt;&gt;&gt;(<span class="hljs-string">'http'</span>,     <span class="hljs-string">'www.example.com'</span>,     <span class="hljs-string">'/path/to/myfile.html'</span>,     <span class="hljs-string">'?key1=value1&amp;key2=value2'</span>,     <span class="hljs-string">'key1=value1&amp;key2=value2'</span>,     <span class="hljs-string">'#SomewhereInTheDocument'</span>,     <span class="hljs-string">'SomewhereInTheDocument'</span>)</code></pre><p><strong>贪婪匹配</strong><br>正则表达式默认是贪婪匹配的，也就是说它会在满足匹配条件的情况下尽可能多的匹配字符，例如这里有一段话：</p><pre><code class="hljs python">html = <span class="hljs-string">"""&lt;div&gt;&lt;p&gt;Today a quick article on a nic&lt;/p&gt;&lt;p&gt;Read more ...&lt;/p&gt;&lt;/div&gt;"""</span></code></pre><p>里面有两对<code>&lt;p&gt;</code>标签，如果你只想匹配第一对，使用</p><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>re.search(<span class="hljs-string">"&lt;p&gt;.*&lt;/p&gt;"</span>, html)<span class="hljs-meta">&gt;&gt;&gt; </span>m = re.search(<span class="hljs-string">"&lt;p&gt;.*&lt;/p&gt;"</span>, html)<span class="hljs-meta">&gt;&gt;&gt; </span>m.group()<span class="hljs-string">'&lt;p&gt;Today a quick article on a nic&lt;/p&gt;&lt;p&gt;Read more ...&lt;/p&gt;'</span>&gt;&gt;&gt;&lt;p&gt;.*&lt;/p&gt; 会从第一个&lt;p&gt;开始，匹配到最后一个&lt;/p&gt;，如果要想尽可能少匹配则可以在元字符后面加 ?<span class="hljs-meta">&gt;&gt;&gt; </span>m = re.search(<span class="hljs-string">"&lt;p&gt;.*?&lt;/p&gt;"</span>, html)<span class="hljs-meta">&gt;&gt;&gt; </span>m.group()<span class="hljs-string">'&lt;p&gt;Today a quick article on a nic&lt;/p&gt;'</span></code></pre><hr><p><a href="https://mp.weixin.qq.com/s?__biz=MjM5MzgyODQxMQ==&mid=2650367680&idx=1&sn=2e8ef8bcf4dc176c46376508cb5a8fa7&chksm=be9cdd9489eb54822dc5993ff71050ca9011aff07fdf642b3eccdee7e20dc2efad9f21fb1a63&scene=0#rd" target="_blank" rel="noopener">原文地址：关于正则表达式的5个小贴士</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Etcd集群配置</title>
+    <link href="/2017/12/15/17-ETCD-Cluster-config/"/>
+    <url>/2017/12/15/17-ETCD-Cluster-config/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><strong>etcd</strong>是以实现<em>共享配置和服务发现</em>为目的提供一致性的键值存储的分布式数据库。<br>著名的容器编排系统kubernetes项目使用了etcd。</p>          </div><p><strong>服务器环境：</strong></p><table><thead><tr><th align="center">ip</th><th align="center">client_port</th><th align="center">peer_port</th></tr></thead><tbody><tr><td align="center">10.20.48.107</td><td align="center">2379</td><td align="center">2380</td></tr><tr><td align="center">10.20.48.108</td><td align="center">2379</td><td align="center">2380</td></tr><tr><td align="center">10.20.48.109</td><td align="center">2379</td><td align="center">2380</td></tr></tbody></table><a id="more"></a><p><strong>安装etcd：</strong><br>安装比较简单，我们只需要去<a href="https://github.com/coreos/etcd/releases" target="_blank" rel="noopener">官方</a>下载包就可以</p><ul><li><code>wget https://github.com/coreos/etcd/releases/download/v3.1.11/etcd-v3.1.11-linux-amd64.tar.gz</code></li><li><code>tar zxvf etcd-v3.1.11-linux-amd64.tar.gz -C /usr/local/</code></li><li>在<code>/usr/local/</code> 目录下 <code>mv etcd-v3.1.11-linux-amd64.tar.gz etcdv3</code></li><li><code>ln -s /usr/local/etcdv3/etcd* /usr/local/bin/</code></li><li>在<code>/etc/profile</code>中添加环境变量<code>export ETCDCTL_API=3</code></li></ul><p><strong>配置说明：</strong></p><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-comment">#节点的名称</span><span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-comment">#该成员的对等url列表，用于向集群的其他成员通告（告诉其他成员通过什么url和我通信）</span><span class="hljs-attr">listen-peer-urls:</span><span class="hljs-comment"># 本地监听，接收同等节点请求的端口</span><span class="hljs-attr">listen-client-urls:</span>  <span class="hljs-comment"># 本地监听，接受客户端请求的端口</span><span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-comment"># 该成员的客户端url的列表，用于向所有人通告（告知所有人client访问我的哪儿）</span><span class="hljs-attr">initial-cluster-token:</span>  <span class="hljs-comment"># 集群唯一令牌，识别不同的集群</span><span class="hljs-attr">initial-cluster:</span> <span class="hljs-comment"># 集群的成员，name是前面指定name</span><span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-comment"># 初始集群的状态，有“new,existing”</span><span class="hljs-attr">data-dir:</span> <span class="hljs-comment"># 数据存储的目录</span></code></pre><p><strong>配置文件：</strong><br>我们通过配置文件的方式启动<br>etcd1：</p><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd1"</span><span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.107:2380"</span><span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.107:2380"</span><span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.107:2379,http://127.0.0.1:2379"</span><span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.107:2379"</span><span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span><span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span><span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span><span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd1"</span></code></pre><p>etcd2：</p><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd2"</span><span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.108:2380"</span><span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.108:2380"</span><span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.108:2379,http://127.0.0.1:2379"</span><span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.108:2379"</span><span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span><span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span><span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span><span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd2"</span></code></pre><p>etcd3：</p><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd3"</span><span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.109:2380"</span><span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.109:2380"</span><span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.109:2379,http://127.0.0.1:2379"</span><span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.109:2379"</span><span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span><span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span><span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span><span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd3"</span></code></pre><p><strong>启动脚本：</strong></p><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/sh</span>startwork()&#123;        nohup /usr/<span class="hljs-built_in">local</span>/bin/etcd --config-file /home/qqdz/etcd/etcd.yml  &amp;         <span class="hljs-built_in">echo</span> <span class="hljs-string">"ps x | grep \"etcd\""</span>        ps x|grep <span class="hljs-string">"etcd"</span>   &#125;stopwork()&#123;        SERVERLIST=<span class="hljs-string">'etcd'</span>        <span class="hljs-keyword">for</span> serv <span class="hljs-keyword">in</span> <span class="hljs-variable">$SERVERLIST</span>        <span class="hljs-keyword">do</span>                <span class="hljs-built_in">echo</span> <span class="hljs-string">"stop <span class="hljs-variable">$serv</span>"</span>                ps aux|grep <span class="hljs-string">"/<span class="hljs-variable">$serv</span>"</span>|sed -e <span class="hljs-string">"/grep/d"</span>|awk <span class="hljs-string">'&#123;print $2&#125;'</span>|xargs <span class="hljs-built_in">kill</span> 2&amp;&gt;/dev/null                sleep 1        <span class="hljs-keyword">done</span>    <span class="hljs-keyword">while</span> <span class="hljs-built_in">test</span> -f run.sh    <span class="hljs-keyword">do</span>        count=`ps x|grep <span class="hljs-string">"etcd-c"</span>|sed -e <span class="hljs-string">'/grep/d'</span>|wc -l`        <span class="hljs-built_in">echo</span> <span class="hljs-string">"running server:"</span><span class="hljs-variable">$count</span>        <span class="hljs-keyword">if</span> [ <span class="hljs-variable">$count</span> -eq 0 ]; <span class="hljs-keyword">then</span>            <span class="hljs-built_in">break</span>        <span class="hljs-keyword">fi</span>        sleep 1    <span class="hljs-keyword">done</span>&#125;<span class="hljs-built_in">echo</span> <span class="hljs-string">"-------------------start-----------------------"</span><span class="hljs-keyword">case</span> <span class="hljs-variable">$1</span> <span class="hljs-keyword">in</span>stop)    stopwork;;start)    startwork;;*)    stopwork    sleep 1    startwork;;<span class="hljs-keyword">esac</span><span class="hljs-built_in">echo</span> <span class="hljs-string">"-------------------end-----------------------"</span></code></pre><p><strong>常用命令：</strong><br>获取etcd所有的keys<br><code>ETCDCTL_API=3 etcdctl get &quot;&quot; --prefix=true</code><br><code>ETCDCTL_API=3 etcdctl get &quot;&quot; --from-key</code></p><p>查看集群状态<br>在<code>.bash_profile</code>中添加下面语句，这样每次登录都会自动加载变量<br><code>ENDPOINTS=10.20.48.107:2379,10.20.48.108:2379,10.20.48.109:2379</code><br><code>export ENDPOINTS</code></p><p>通过下面命令查看集群状态：<br><code>etcdctl --write-out=table --endpoints=$ENDPOINTS endpoint status</code></p><pre><code class="hljs bash">[root@localhost ~]$ etcdctl --write-out=table --endpoints=<span class="hljs-variable">$ENDPOINTS</span> endpoint status     +-------------------+------------------+---------+---------+-----------+-----------+------------+|     ENDPOINT      |        ID        | VERSION | DB SIZE | IS LEADER | RAFT TERM | RAFT INDEX |+-------------------+------------------+---------+---------+-----------+-----------+------------+| 10.20.48.107:2379 | 40c1a9f933c13188 | 3.1.11  | 33 kB   | <span class="hljs-literal">true</span>      |       176 |         41 || 10.20.48.108:2379 | c0598886ee4f3484 | 3.1.11  | 33 kB   | <span class="hljs-literal">false</span>     |       176 |         41 || 10.20.48.109:2379 | 3837344de92ee822 | 3.1.11  | 33 kB   | <span class="hljs-literal">false</span>     |       176 |         41 |+-------------------+------------------+---------+---------+-----------+-----------+------------+</code></pre><p>通过下面命令查看健康状态：<br><code>etcdctl --write-out=table --endpoints=$ENDPOINTS endpoint health</code></p><pre><code class="hljs bash">[root@localhost ~]$ etcdctl --endpoints=<span class="hljs-variable">$ENDPOINTS</span> endpoint health                10.20.48.107:2379 is healthy: successfully committed proposal: took = 1.249516ms10.20.48.109:2379 is healthy: successfully committed proposal: took = 1.415811ms10.20.48.108:2379 is healthy: successfully committed proposal: took = 1.487734ms</code></pre><p>启动Etcd网关：<br><code>etcd gateway start --endpoints=10.20.48.107:2379,10.20.48.108:2379,10.20.48.109:2379 --listen-addr=&quot;127.0.0.1:23790&quot;</code></p><hr><p>资料：<br><a href="https://coreos.com/etcd/docs/latest/dev-guide/interacting_v3.html" target="_blank" rel="noopener">Etcd交互</a><br><a href="https://github.com/coreos/etcd/blob/master/etcd.conf.yml.sample" target="_blank" rel="noopener">Etcd–config-file配置模板</a><br><a href="https://coreos.com/etcd/docs/latest/op-guide/configuration.html" target="_blank" rel="noopener">Etcd配置说明</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>db</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>etcd</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>CentOs 7.X下Python3与Python2共存</title>
+    <link href="/2017/12/15/16-CentOs-7-x-install-python3-6/"/>
+    <url>/2017/12/15/16-CentOs-7-x-install-python3-6/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>CentOs 7.X下Python3与Python2共存<br><a href="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/" title="Win10下共存可以点击这里">Win10下共存可以点击这里</a></p>          </div><a id="more"></a><p><strong>首先安装python3.6可能需要的依赖包</strong><br><code>yum install openssl-devel bzip2-devel expat-devel gdbm-devel readline-devel sqlite-devel</code></p><p><strong>去官网下载最新的python安装包</strong><br><code>wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz</code></p><blockquote><p>有一个注意点,如果直接使用<code>make intall</code> 会和系统自带的python安装到同一个目录/usr/bin/, 不好处理<br>这里我们首先创建一个自定义的目录,我这里是<code>/usr/local/python3</code></p></blockquote><p><strong>把python3.6安装到自定义目录</strong><br>–enable-shared参数就可以生成对应动态链接库<br><code>./configure --prefix=/usr/local/python3 --enable-shared</code><br><code>make &amp;&amp; make install</code></p><p><strong>python3.6程序路径</strong><br><code>python3.6程序的执行文件：/usr/local/python3/bin/python3.6</code><br><code>python3.6应用程序目录：/usr/local/python3/lib/python3.6</code><br><code>pip3的执行文件：/usr/local/python3/bin/pip3.6</code><br><code>pyenv3的执行文件：/usr/local/python3/bin/pyenv-3.6</code></p><p><strong>系统自带的python就是一个软连接</strong></p><pre><code class="hljs bash">lrwxrwxrwx. 1 root root    7 7月  29 2016 /usr/bin/python -&gt; python2lrwxrwxrwx. 1 root root    9 7月  29 2016 /usr/bin/python2 -&gt; python2.7</code></pre><p><strong>修改默认软连接</strong><br><code>cd /usr/bin/</code><br><code>mv python python.bak</code><br><code>ln -s /usr/local/python3/bin/python3.6 /usr/bin/python</code><br><code>ln -s /usr/local/python3/bin/pip3.6 /usr/bin/pip</code></p><p><strong>删除软链接</strong><br><code>rm -rf /usr/bin/pip</code></p><p><strong>进入python</strong><br><code>输入Python 进入Python3 如果想用Python2的话 输入Python2 就行了</code></p><p><strong>安装pip</strong><br><code>/usr/bin/python -m pip install pillow</code></p><p><strong>最后最关键的,修改yum文件,不然yum会无法使用</strong><br><code>cd /usr/bin/ls yum*</code></p><pre><code class="hljs bash">yum  yum-builddep  yum-config-manager  yum-debug-dump  yum-debug-restore  yumdownloader  yum-groups-manager</code></pre><p>修改这些程序头文件为<code>#!/usr/bin/python2</code></p><p><strong>修改gnome-tweak-tool配置文件</strong><br><code>vi /usr/bin/gnome-tweak-tool</code></p><blockquote><p><code>#!/usr/bin/python 改为 #!/usr/bin/python2</code></p></blockquote><p><strong>修改urlgrabber配置文件</strong><br><code>vi /usr/libexec/urlgrabber-ext-down</code></p><blockquote><p><code>#!/usr/bin/python 改为 #!/usr/bin/python2</code></p></blockquote><p><strong>创建虚拟环境</strong><br><code>python3 -m venv venv_name</code><br>or<br><code>pip install --user virtualenv (user实现用户隔离)</code></p><p>example：<br><code>python3 -m venv /opt/python_env</code><br><code>source /opt/python_env/bin/activate</code><br><code>deactivate</code><br>or：<br><code>virtualenv /opt/python_env</code></p><hr><p><strong>资料：</strong><br><a href="http://blog.csdn.net/rubikta/article/details/76728434" target="_blank" rel="noopener">1</a><br><a href="http://blog.csdn.net/hobohero/article/details/54381475" target="_blank" rel="noopener">2</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>使用iptables查看数据流量</title>
+    <link href="/2017/09/07/15-iptables/"/>
+    <url>/2017/09/07/15-iptables/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>要监控系统中某一个IP,某一个端口的流量,不需要第三方的工具<br>使用iptables就可以实现</p>          </div><a id="more"></a><p><strong>命令:</strong></p><pre><code class="hljs bash">iptables -L -v -n -x INPUT</code></pre><blockquote><p>说明: 这条命令会显示当前iptables所有规则的情况<br><code>-L:</code>列出规则链中所有的规则<br><code>-v:</code>显示详细信息,包含通过该规则的数据包数量，总字节数及相应的网络接口<br><code>-n:</code>不进行域名解析,显示IP<br><code>-x:</code>不进行单位转换(默认是bytes)<br><code>INPUT</code>: 指定显示INPUT关卡</p></blockquote><p><strong>结果:</strong></p><pre><code class="hljs plain">[root@test ~]# iptables -vnL  INPUT -t filterChain INPUT (policy DROP 725 packets, 48678 bytes) pkts bytes target     prot opt in     out     source               destination        0     0            udp  --  *      *       0.0.0.0&#x2F;0           9.8.4.2        udp dpt:9527       38740 6613K            tcp  --  *      *       0.0.0.0&#x2F;0            9.8.4.2        tcp dpt:9527  5310  379K ACCEPT     all  --  lo     *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           1692K  573M ACCEPT     all  --  eth1   *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0             146 10894 ACCEPT     all  --  *      *       9.2.54.226         0.0.0.0&#x2F;0               0     0 ACCEPT     all  --  *      *       9.2.54.227         0.0.0.0&#x2F;0              0     0 ACCEPT     tcp  --  *      *       22.7.3.16        0.0.0.0&#x2F;0           tcp dpt:22     0     0 ACCEPT     tcp  --  *      *       11.94.4.5        0.0.0.0&#x2F;0           tcp dpt:10050  263M  105G ACCEPT     all  --  *      *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           state RELATED,ESTABLISHED 14731  645K ACCEPT     tcp  --  *      *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           tcp dpt:80   53M 3267M ACCEPT     tcp  --  *      *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           tcp dpt:9527  141K 8826K DROP       icmp --  *      *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0               0     0 ACCEPT     all  --  *      *       22.7.3.14        0.0.0.0&#x2F;0</code></pre><blockquote><p> 解析: 这是测试的数据,可以看到我们指定显示filter表中的INPUT链的结果<br><code>policy DROP:</code>代表的是当前链默认的策略,在这里进入的所有流量都DROP掉(等于是开启白名单)<br><code>packets:</code>当前链默认策略匹配到的包的数量<br><code>bytes:</code>当前链默认策略匹配到的所有包的大小总和<br> 我们可以把packets和bytes当做”计数器”, 计数器记录了默认策略匹配到的报文数量与总大小只有在使用<code>-v</code>选项时,才会显示出来</p></blockquote><hr><p>上面的命令是查看规则(默认是filter表),下面我们来添加自己需要的规则</p><pre><code class="hljs plain">iptables -I INPUT -p udp -d 9.8.4.2 --dport 9527</code></pre><blockquote><p>说明:插入一条规则(没有指定-t 表名的情况下, 默认是filter表)<br><code>-I:</code>表示在INPUT链中插入一条规则(首部插入规则)<br><code>-p:</code>指定报文的协议<br><code>-d:</code>报文请求的目的IP地址<br><code>--dport:</code>报文请求的目的端口</p></blockquote><p>添加完了以后我们就可以使用<code>iptables -vnL  INPUT -t filter</code>查看到指定规则的数据情况</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>python正则取值以及生成字串的MD5</title>
+    <link href="/2017/08/25/14-python-re-md5/"/>
+    <url>/2017/08/25/14-python-re-md5/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>使用<code>python</code>内置<code>hashlib</code>库对字串做MD5加密,使用<code>re</code>库做正则取值</p>          </div><a id="more"></a><pre><code class="hljs python"><span class="hljs-comment"># 导入hashlib库</span><span class="hljs-keyword">import</span> hashlib<span class="hljs-comment"># 生成MD5对象</span>m = hashlib.md5()<span class="hljs-comment"># 传入需要加密的字串</span>m.update(<span class="hljs-string">"str4MD5Encode"</span>)<span class="hljs-comment"># 获得加密后的结果</span>encodeStr = m.hexdigest()<span class="hljs-comment"># 打印输出</span><span class="hljs-keyword">print</span> encodeStrf8fd73cf519e6f11513d505b9dd33541</code></pre><p><strong>为了复用，写一个简单的函数</strong></p><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">md5Encode</span><span class="hljs-params">(str)</span>:</span>    m = hashlib.md5()    m.update(str)    <span class="hljs-keyword">return</span> m.hexdigest()</code></pre><div class="note note-danger">            <p><strong>注意</strong><br>这里写成一个函数有两个好处</p><ul><li>方便重复使用</li><li>运行<code>m.update(str)</code>以后，如果再次运行<code>m.update(new_str)</code>，结果将会是<code>m.update(str+new_str)</code></li></ul><p>所以我们使用写成函数，传入准确的字串，获取MD5</p>          </div><hr><p><strong>示例文本:</strong></p><pre><code class="hljs bash"><span class="hljs-comment"># testFile</span>100000637 &#123;<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"864836023415302"</span>,<span class="hljs-string">"mac"</span>:<span class="hljs-string">"44:91:57:0c:71:ce"</span>&#125;100000638 &#123;<span class="hljs-string">"mac"</span>:<span class="hljs-string">"f0:21:6c:ba:d3:98"</span>,<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"860440031505974"</span>&#125;100000662 &#123;<span class="hljs-string">"mac"</span>:<span class="hljs-string">"40:c6:2a:22:0e"</span>,<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"868904020276766"</span>&#125;100000673 &#123;<span class="hljs-string">"mac"</span>:<span class="hljs-string">"94:92:bc:da:ca:93"</span>,<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"869735020030046"</span>&#125;100000684 &#123;<span class="hljs-string">"mac"</span>:<span class="hljs-string">"fc:1a:11:ab:6d:f4"</span>,<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"860736036152609"</span>&#125;100000731 &#123;<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"a0:cd:c6:49:48:5a"</span>,<span class="hljs-string">"mac"</span>:<span class="hljs-string">"a0:86:2d:49:48:5a"</span>&#125;100000738 &#123;<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"864895024394247"</span>,<span class="hljs-string">"mac"</span>:<span class="hljs-string">"00:E0:de:24:C9:00"</span>&#125;100000752 &#123;<span class="hljs-string">"mac"</span>:<span class="hljs-string">"28:12321:1c:72:62"</span>,<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"868970028781214"</span>&#125;100000754 &#123;<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"866641029299231"</span>,<span class="hljs-string">"mac"</span>:<span class="hljs-string">"18:59:231:b5:77:dc"</span>&#125;100000788 &#123;<span class="hljs-string">"device_id"</span>:<span class="hljs-string">"866401021328946"</span>,<span class="hljs-string">"mac"</span>:<span class="hljs-string">"7c:1dg:59:1f:58"</span>&#125;</code></pre><p><strong>脚本:</strong></p><pre><code class="hljs python"><span class="hljs-comment"># coding: utf-8</span><span class="hljs-keyword">import</span> hashlib<span class="hljs-keyword">import</span> re<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">md5Encode</span><span class="hljs-params">(str)</span>:</span>    m = hashlib.md5()    m.update(str)    <span class="hljs-keyword">return</span> m.hexdigest()reDevice = re.compile(<span class="hljs-string">r'"(device_id)":"(.*?)"'</span>)<span class="hljs-keyword">with</span> open(<span class="hljs-string">'testFile'</span>) <span class="hljs-keyword">as</span> f1, open(<span class="hljs-string">'id_md5'</span>, <span class="hljs-string">'w'</span>) <span class="hljs-keyword">as</span> f2:    <span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> f1:        <span class="hljs-comment"># 通过正则pattern对象的search()方法, 对分组数据进行MD5加密</span>        device_id = reDevice.search(line.strip()).group(<span class="hljs-number">2</span>)        id_md5 = md5Encode(device_id)        f2.write(device_id + <span class="hljs-string">":"</span> + id_md5 + <span class="hljs-string">'\n'</span>)</code></pre><p><strong>结果:</strong></p><pre><code class="hljs bash"><span class="hljs-comment"># cat id_md5</span>864836023415302:a5ade0da66ad15a80e91438f73289ee7860440031505974:5f58bcb19a30875f27bbfa61b5edf712868904020276766:d139843333d646ce4fcdf7841244cfab869735020030046:da542e0f71b3c4ac47436d59dd65f4a5860736036152609:f3970ffd140a252c145755f5397debdda0:86:c6:49:48:5a:71fd88a02db8529ae62844fefcab99ef864895024394247:94f29934a622f4154c1456fcf4fdee81868970028781214:39521a4b53f33c7d56ce6bf9e6b1990f866641029299231:b4b6fd43f950d74053e18a56413d85b2866401021328946:75b2c413c3f8e2fc8338f4f3bf8c00ff</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Linux下的策略路由设置</title>
+    <link href="/2017/08/15/13-linux-ip-rule/"/>
+    <url>/2017/08/15/13-linux-ip-rule/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><strong>策略路由</strong><br>策略性是指对于IP包的路由是以系统管理员根据需要定下的一些策略为主要依据进行路由的。<br>例如我们可以有这样的策略：”当服务器有两块网卡的时候,A网卡来的数据从A出去,B网卡来的数据从B出去,做到源进源出”</p>          </div><a id="more"></a><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/bash </span>sed -i  <span class="hljs-string">'/252 bgp/d'</span> /etc/iproute2/rt_tables sed -i  <span class="hljs-string">'/251 yidong/d'</span> /etc/iproute2/rt_tables IF_BGP=<span class="hljs-string">"bond0.1503"</span>IF_YIDONG=<span class="hljs-string">"bond0.1501"</span>GW_BGP=103.19.255.193GW_YIDONG=117.18.36.129IP_BGP=103.19.255.236IP_YIDONG=117.18.36.216<span class="hljs-comment"># 打开linux的路由功能</span><span class="hljs-built_in">echo</span> <span class="hljs-string">'1'</span> &gt; /proc/sys/net/ipv4/ip_forward <span class="hljs-comment"># 在rt_tables中添加自定义路由表, 表序号和表名字</span><span class="hljs-built_in">echo</span> <span class="hljs-string">'252 bgp'</span> &gt;&gt; /etc/iproute2/rt_tables <span class="hljs-built_in">echo</span> <span class="hljs-string">'251 yidong'</span> &gt;&gt; /etc/iproute2/rt_tables <span class="hljs-comment"># 刷新bgp\yidong路由表</span>ip route flush table bgpip route flush table yidong<span class="hljs-comment"># 添加一个路由规则到 bgp 表,这条规则是 bgp 这个路由表中的数据包 默认通过网卡 bond0.1501 经过网关 103.19.255.193 出去</span>ip route add default via <span class="hljs-variable">$GW_BGP</span> dev <span class="hljs-variable">$IF_BGP</span> table bgp<span class="hljs-comment"># 添加一个路由规则到 yidong 表,这条规则是 yidong 这个路由表中的数据包 默认通过网卡 bond0.1503 经过网关 117.18.36.129 出去</span>ip route add default via <span class="hljs-variable">$GW_YIDONG</span> dev <span class="hljs-variable">$IF_YIDONG</span> table yidong<span class="hljs-comment">#来自 103.19.255.236 的数据包，使用 bgp 路由表的路由规则</span>ip rule add from <span class="hljs-variable">$IP_BGP</span> table bgp<span class="hljs-comment">#来自 117.18.36.216 的数据包，使用 yidong 路由表的路由规则</span>ip rule add from <span class="hljs-variable">$IP_YIDONG</span> table yidong<span class="hljs-comment"># 打了标记1的走BGP路由表,打了标记2的走YIDONG路由表</span><span class="hljs-comment"># 此句型配合iptables -t mangle应用.如先对数据包作标记:</span>ip rule add fwmark 1 table bgp ip rule add fwmark 2 table yidong</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>python获取目录下的目录和文件</title>
+    <link href="/2017/08/10/12-Python-directories-and-files/"/>
+    <url>/2017/08/10/12-Python-directories-and-files/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p><font color="red"><strong>使用os.walk</strong></font><br><font color="red"><strong>使用os.scandir()</strong></font></p>          </div><a id="more"></a><p><strong>os.walk</strong><br>可以得到一个三元<code>tupple(dirpath, dirnames, filenames)</code><br>第一个为起始路径，第二个为起始路径下的文件夹，第三个是起始路径下的文件。<br><code>dirpath</code> 是一个string，代表目录的路径，<br><code>dirnames</code> 是一个list，包含了dirpath下所有子目录的名字。<br><code>filenames</code> 是一个list，包含了非目录文件的名字。</p><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_full_path</span><span class="hljs-params">(path)</span>:</span>    <span class="hljs-keyword">for</span> root, dirs, files <span class="hljs-keyword">in</span> os.walk(path):        <span class="hljs-keyword">for</span> file_ <span class="hljs-keyword">in</span> files:            <span class="hljs-comment"># 将路径和文件拼接起来</span>            print(os.path.join(root, file_))<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">'__main__'</span>:    get_full_path(<span class="hljs-string">'/path/to/some/folder'</span>)</code></pre><hr><p><strong>os.scandir()</strong><br>Python 3.5版本中，新添加了<code>os.scandir()</code>方法，它是一个目录迭代方法。<br>在Python 3.5中，os.walk是使用os.scandir来实现的<br>根据Python 3.5宣称，它在POSIX系统中，执行速度提高了3到5倍<br>在Windows系统中，执行速度提高了7到20倍。</p><pre><code class="hljs python"><span class="hljs-keyword">import</span> osfolders = []files = [] <span class="hljs-keyword">for</span> entry <span class="hljs-keyword">in</span> os.scandir(<span class="hljs-string">'/'</span>):    <span class="hljs-keyword">if</span> entry.is_dir():    <span class="hljs-comment"># 在这里直接使用entry.path显示路径</span>    <span class="hljs-comment"># 使用entry.name显示文件名</span>        folders.append(entry.path, entry.name)    <span class="hljs-keyword">elif</span> entry.is_file():        files.append(entry.path)print(<span class="hljs-string">'Folders:'</span>)print(folders)</code></pre><hr><p><strong>例子:</strong></p><pre><code class="hljs python"><span class="hljs-comment">#!python3</span><span class="hljs-comment"># coding: utf-8</span><span class="hljs-keyword">import</span> sys<span class="hljs-keyword">import</span> os<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">main</span><span class="hljs-params">(path, ver)</span>:</span>    html_path = <span class="hljs-string">r'http://masato.com/'</span>    <span class="hljs-keyword">with</span> os.scandir(path) <span class="hljs-keyword">as</span> entrys:        <span class="hljs-keyword">for</span> entry <span class="hljs-keyword">in</span> entrys:            <span class="hljs-keyword">if</span> entry.is_dir(): <span class="hljs-comment"># 只需要目录</span>                print(<span class="hljs-string">'\n'</span> + <span class="hljs-string">"目录名称是: "</span> + <span class="hljs-string">"[ "</span> + entry.name + <span class="hljs-string">" ]"</span>)                <span class="hljs-keyword">for</span> root, dirs, files <span class="hljs-keyword">in</span> os.walk(entry.path):                    <span class="hljs-keyword">for</span> file <span class="hljs-keyword">in</span> files:                    <span class="hljs-comment"># 获取文件的全路径</span>                        file_path = os.path.join(root, file)                        <span class="hljs-comment"># 将文件修改为"html_path"开头的连接</span>                        print(html_path + ver + <span class="hljs-string">'/'</span> + (<span class="hljs-string">'/'</span>.join(file_path.split(<span class="hljs-string">'\\'</span>)[<span class="hljs-number">2</span>:])))    print(<span class="hljs-string">'\n'</span>)<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">'__main__'</span>:    <span class="hljs-keyword">try</span>:    <span class="hljs-comment"># 我的目录格式是这样的D:\测试\20170808R2_res47\，会自动切割最后的res47</span>        ver = sys.argv[<span class="hljs-number">1</span>].split(<span class="hljs-string">'_'</span>)[<span class="hljs-number">-1</span>]        main(sys.argv[<span class="hljs-number">1</span>], ver)    <span class="hljs-keyword">except</span> FileNotFoundError <span class="hljs-keyword">as</span> e:        print(<span class="hljs-string">'\n'</span>, e)    <span class="hljs-keyword">except</span> IndexError:        print(<span class="hljs-string">"\n"</span> + <span class="hljs-string">"  Used: "</span> + sys.argv[<span class="hljs-number">0</span>] + <span class="hljs-string">" full_path"</span> + <span class="hljs-string">"\n"</span>)    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:        print(<span class="hljs-string">'\n'</span>, e)</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>HEXO开启第三方服务</title>
+    <link href="/2017/07/28/11-Third-party-service/"/>
+    <url>/2017/07/28/11-Third-party-service/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>静态站点拥有一定的局限性，因此我们需要借助于第三方服务来扩展站点的功能</p>          </div><a id="more"></a><h3 id="添加不蒜子统计"><a href="#添加不蒜子统计" class="headerlink" title="添加不蒜子统计"></a>添加不蒜子统计</h3><blockquote><p>“不蒜子”与百度统计谷歌分析等有区别：“不蒜子”可直接将访问次数显示在您在网页上（也可不显示）；对于已经上线一段时间的网站，“不蒜子”允许您初始化首次数据。。<br><a href="http://ibruce.info/2015/04/04/busuanzi/" target="_blank" rel="noopener">不蒜子官网</a></p></blockquote><p>主题配置文件中<br><code>/hexo-site/themes/next/_config.yml</code></p><pre><code class="hljs bash">busuanzi_count:  <span class="hljs-comment"># count values only if the other configs are false</span>  <span class="hljs-built_in">enable</span>: <span class="hljs-literal">true</span> <span class="hljs-comment"># 默认false</span>  <span class="hljs-comment"># custom uv span for the whole site</span>  site_uv: <span class="hljs-literal">true</span> <span class="hljs-comment"># 代表在页面底部显示站点的UV值。</span>  site_uv_header: &lt;i class=<span class="hljs-string">"fa fa-user"</span>&gt;&lt;/i&gt; 访问  site_uv_footer:   <span class="hljs-comment"># custom pv span for the whole site</span>  site_pv: <span class="hljs-literal">true</span> <span class="hljs-comment"># 代表在页面底部显示站点的PV值。</span>  site_pv_header: &lt;i class=<span class="hljs-string">"fa fa-eye"</span>&gt;&lt;/i&gt; 总访问量  site_pv_footer: 次  <span class="hljs-comment"># custom pv span for one page only</span>  page_pv: <span class="hljs-literal">true</span> <span class="hljs-comment"># 代表在文章页面的标题下显示该页面的PV值（阅读数）。</span>  page_pv_header: &lt;i class=<span class="hljs-string">"fa fa-file-o"</span>&gt;&lt;/i&gt; 浏览  page_pv_footer: 次</code></pre><div class="note note-warning">            <p>注意DEBUG模式下数值会异常，部署就好了</p>          </div><hr><h3 id="开启腾讯分析"><a href="#开启腾讯分析" class="headerlink" title="开启腾讯分析"></a>开启腾讯分析</h3><p>主题配置文件中<br><code>/hexo-site/themes/next/_config.yml</code></p><pre><code class="hljs powershell"><span class="hljs-comment"># Tencent analytics ID</span>tencent_analytics: yourID</code></pre><p>主要步骤:</p><ol><li>登录<a href="ta.qq.com">腾讯分析</a></li><li>右上角站点列表</li><li>新增站点</li><li>获取ID<pre><code class="hljs powershell">&lt;script type=<span class="hljs-string">"text/javascript"</span> src=<span class="hljs-string">"http://tajs.qq.com/stats?sId=1234567"</span> charset=<span class="hljs-string">"UTF-8"</span>&gt;&lt;/script&gt;</code></pre></li></ol><hr><p>打完，收工</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>hexo</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>HEXO常用命令</title>
+    <link href="/2017/07/28/10-hexoCommands/"/>
+    <url>/2017/07/28/10-hexoCommands/</url>
+    
+    <content type="html"><![CDATA[<div class="note note-info">            <p>脑子不用也会生锈，好记性不如烂笔头</p>          </div><a id="more"></a><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><blockquote><p><code>$ npm install -g hexo-cli</code></p></blockquote><h4 id="建站"><a href="#建站" class="headerlink" title="建站"></a>建站</h4><blockquote><p><code>$ hexo init &quot;site&quot;</code> # 创建站点<br><code>$ cd &quot;site&quot;</code><br><code>$ npm install</code> # 初始化</p></blockquote><h4 id="文章"><a href="#文章" class="headerlink" title="文章"></a>文章</h4><blockquote><p><code>hexo new &quot;新的文章&quot;</code>  # 创建新的文章<br><code>hexo generate == hexo g</code> # 生成静态文件<br><code>hexo publish == hexo p</code> # 发表草稿<br><code>hexo deploy == hexo d</code> # 部署<br><code>hexo g -d == hexo d -g</code> # 效果一样, 发布+部署</p></blockquote><h4 id="服务器"><a href="#服务器" class="headerlink" title="服务器"></a>服务器</h4><blockquote><p><code>hexo server == hexo s</code> # 启动服务预览</p></blockquote><blockquote><p>可以通过访问本地端口去预览效果<br><code>hexo s -debug -p 8888</code> # 指定端口运行DEBUG模式</p></blockquote><h4 id="清除"><a href="#清除" class="headerlink" title="清除"></a>清除</h4><p>清除缓存文件 (db.json) 和已生成的静态文件 (public)。<br>在某些情况（尤其是更换主题后），如果发现对站点的更改无论如何也不生效</p><blockquote><p><code>hexo clean</code></p></blockquote><h4 id="列出信息"><a href="#列出信息" class="headerlink" title="列出信息"></a>列出信息</h4><blockquote><p>列出网站内容<br><code>hexo list &lt;type&gt;</code><br><code>types: page, post, route, tag, category</code></p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>hexo</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>动态调整LVM大小(XFS格式)</title>
+    <link href="/2017/07/27/09-Dynamic-adjustment-LVM/"/>
+    <url>/2017/07/27/09-Dynamic-adjustment-LVM/</url>
+    
+    <content type="html"><![CDATA[<img src="/2017/07/27/09-Dynamic-adjustment-LVM/LVM.png" srcset="/img/loading.gif" class="" title="LVM逻辑结构">  <div class="note note-warning">            <p><strong>xfs是不支持动态缩减的,可以增加</strong><br>There is no way to shrink XFS file systems.<br><a href="http://tldp.org/HOWTO/LVM-HOWTO/reducelv.html" target="_blank" rel="noopener">相关链接</a><br>但是，我们可以借助于工具搞定它</p>          </div><a id="more"></a><h3 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h3><h4 id="分区情况"><a href="#分区情况" class="headerlink" title="分区情况"></a>分区情况</h4><p>sdb是我增加一块磁盘,8G,分成4个lvm分区</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/01-info.png" srcset="/img/loading.gif" class=""><p>上面4个分区组成了一个testVg</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/02-VG.png" srcset="/img/loading.gif" class=""><h3 id="创建LV"><a href="#创建LV" class="headerlink" title="创建LV"></a>创建LV</h3><pre><code class="hljs bash">lvcreate -L +2G -n test_lv testVg</code></pre><p>生成了一个2G大小的test_lv分区</p>{% asset_img 03-lv.png %}<h3 id="增加分区大小-没有格式化之前"><a href="#增加分区大小-没有格式化之前" class="headerlink" title="增加分区大小(没有格式化之前)"></a>增加分区大小(没有格式化之前)</h3><pre><code class="hljs bash">[root@localhost ~]<span class="hljs-comment"># lvextend -L +1G /dev/testVg/test_lv </span>Size of logical volume testVg/test_lv changed from 2.00 GiB (128 extents) to 3.00 GiB (192 extents).Logical volume testVg/test_lv successfully resized.</code></pre><p>看到已经由2G增加到3G</p><h4 id="格式化LV分区"><a href="#格式化LV分区" class="headerlink" title="格式化LV分区"></a>格式化LV分区</h4><pre><code class="hljs bash">mkfs.xfs /dev/mapper/testVg-test_lv</code></pre><p>通过 <code>fdisk -l</code> 可以看到</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/04-fdisk.png" srcset="/img/loading.gif" class=""><h4 id="挂载到系统目录"><a href="#挂载到系统目录" class="headerlink" title="挂载到系统目录"></a>挂载到系统目录</h4><p>我创建了一个<code>/test</code>目录,挂载上去以后显示的3.3G,可以思考为什么</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/05-mount.png" srcset="/img/loading.gif" class=""><div class="note note-info">            <p>提醒一下,我这边一个PE大小是16M </p>          </div><h4 id="格式化以后增加分区-动态"><a href="#格式化以后增加分区-动态" class="headerlink" title="格式化以后增加分区(动态)"></a>格式化以后增加分区(动态)</h4><p>系统提示已经增加成功,但是通过<code>df -TH</code>没有增加</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/06-extend.png" srcset="/img/loading.gif" class=""><p><code>lvdisplay</code>显示已经增加</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/07-lvdis.png" srcset="/img/loading.gif" class=""><p>需要执行下面的命令<br><code>xfs_growfs /dev/mapper/testVg-test_lv</code></p><blockquote><p>xfs_growfs后面的参数可以是挂载点, 也可以是lv卷名</p></blockquote><p>看到已经变成4.3G了</p><blockquote><p>补充一点<br>如果想将剩余空间全部分配可以使用这个命令<br><code>lvextend -l 100%FREE &lt;logvol path&gt;</code></p></blockquote><h3 id="缩减分区"><a href="#缩减分区" class="headerlink" title="缩减分区"></a>缩减分区</h3><h4 id="工具"><a href="#工具" class="headerlink" title="工具"></a>工具</h4><p>缩减分区我们需要利用到一个工具<br><code>yum -y install xfsdump</code><br>Centos 7已经默认安装了</p><h4 id="准备测试数据"><a href="#准备测试数据" class="headerlink" title="准备测试数据"></a>准备测试数据</h4><img src="/2017/07/27/09-Dynamic-adjustment-LVM/10.png" srcset="/img/loading.gif" class=""><h4 id="备份原有数据"><a href="#备份原有数据" class="headerlink" title="备份原有数据"></a>备份原有数据</h4><p>将现有数据使用工具备份成xfsdump格式文件<br><code>xfsdump -f /backup/to/path/backup.xfsdump /test</code><br>具体执行效果:</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/11.png" srcset="/img/loading.gif" class=""><p>执行完以后会生成指定命名的文件</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/12.png" srcset="/img/loading.gif" class=""><h4 id="缩减分区大小"><a href="#缩减分区大小" class="headerlink" title="缩减分区大小"></a>缩减分区大小</h4><ul><li><p>执行umount卸载分区<br><code>umount /test</code></p></li><li><p>缩减分区<br><code>lvresize -L -1.5G /dev/testVg/test_lv</code><br>我们已经备份过数据了,确认缩减1.5G</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/13.png" srcset="/img/loading.gif" class=""></li><li><p>挂载分区<br><code>mount /dev/mapper/testVg-test_lv /test/</code><br>这时候是不能挂载的,因为缩减以后,要格式化分区,我们先执行格式化</p></li><li><p>格式化分区(-f 强制格式化)<br><code>mkfs.xfs -f /dev/mapper/testVg-test_lv</code><br>然后回到上一步骤,挂载</p></li></ul><p>已经挂载,但是会发现数据没了,下面就是要恢复</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/14.png" srcset="/img/loading.gif" class=""><h4 id="恢复数据"><a href="#恢复数据" class="headerlink" title="恢复数据"></a>恢复数据</h4><p>使用工具<br><code>xfsrestore -f backup.xfsdump /test/</code><br>看到结果成功</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/15.png" srcset="/img/loading.gif" class=""><p>去目录看看文件</p><img src="/2017/07/27/09-Dynamic-adjustment-LVM/16.png" srcset="/img/loading.gif" class=""><p><strong>空间缩减了,数据恢复成功</strong></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>system</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>python中sort和sorted的使用</title>
+    <link href="/2017/07/06/python%E4%B8%ADsort%E5%92%8Csorted%E7%9A%84%E4%BD%BF%E7%94%A8/"/>
+    <url>/2017/07/06/python%E4%B8%ADsort%E5%92%8Csorted%E7%9A%84%E4%BD%BF%E7%94%A8/</url>
+    
+    <content type="html"><![CDATA[<p>我们需要对List进行排序，Python提供了两个方法</p><ul><li><strong>List的成员函数 sort 进行排序</strong></li><li><strong>built-in函数 sorted 进行排序</strong></li></ul><a id="more"></a><p>两者的区别</p><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>help(sorted)Help on built-<span class="hljs-keyword">in</span> function sorted <span class="hljs-keyword">in</span> module __builtin__:sorted(...)    sorted(iterable, cmp=None, key=None, reverse=False) --&gt; new sorted list<span class="hljs-meta">&gt;&gt;&gt; </span>help(list.sort)Help on method_descriptor:sort(...)    L.sort(cmp=<span class="hljs-literal">None</span>, key=<span class="hljs-literal">None</span>, reverse=<span class="hljs-literal">False</span>) -- stable sort *IN PLACE*;    cmp(x, y) -&gt; -1, 0, 1</code></pre><blockquote><p><strong>iterable:</strong> 可迭代对象<br><strong>cmp:</strong> 用于比较的函数，比较什么由key决定<br>*<em>key: *</em> 列表元素的某个属性和函数进行作为关键字<br>*<em>reverse: *</em> 排序规则. reverse = True, 默认为False, True是代表倒序</p></blockquote><p><strong>简单举几个栗子:</strong></p><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>a = [<span class="hljs-number">999</span>, <span class="hljs-number">33</span>, <span class="hljs-number">66</span>, <span class="hljs-number">11</span>, <span class="hljs-number">22</span>, <span class="hljs-number">1</span>, <span class="hljs-number">6</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>sorted(a)                    <span class="hljs-comment">#这会从小到大排序, 不影响a原来的结构</span>[<span class="hljs-number">1</span>, <span class="hljs-number">6</span>, <span class="hljs-number">11</span>, <span class="hljs-number">22</span>, <span class="hljs-number">33</span>, <span class="hljs-number">66</span>, <span class="hljs-number">999</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>sorted(a, reverse = <span class="hljs-literal">True</span>)    <span class="hljs-comment">#倒序</span>[<span class="hljs-number">999</span>, <span class="hljs-number">66</span>, <span class="hljs-number">33</span>, <span class="hljs-number">22</span>, <span class="hljs-number">11</span>, <span class="hljs-number">6</span>, <span class="hljs-number">1</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>b = sorted(a, reverse = <span class="hljs-literal">True</span>)  <span class="hljs-comment"># sorted会返回一个新的列表</span><span class="hljs-meta">&gt;&gt;&gt; </span>b[<span class="hljs-number">999</span>, <span class="hljs-number">66</span>, <span class="hljs-number">33</span>, <span class="hljs-number">22</span>, <span class="hljs-number">11</span>, <span class="hljs-number">6</span>, <span class="hljs-number">1</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>a.sort()                     <span class="hljs-comment">#列表成员函数sort</span><span class="hljs-meta">&gt;&gt;&gt; </span>a[<span class="hljs-number">1</span>, <span class="hljs-number">6</span>, <span class="hljs-number">11</span>, <span class="hljs-number">22</span>, <span class="hljs-number">33</span>, <span class="hljs-number">66</span>, <span class="hljs-number">999</span>] <span class="hljs-comment">#从小到大排序</span><span class="hljs-meta">&gt;&gt;&gt; </span>b = a.sort()                 <span class="hljs-comment">#因为sort是直接影响原来结构,所以b不会有输出</span><span class="hljs-meta">&gt;&gt;&gt; </span>b<span class="hljs-meta">&gt;&gt;&gt; </span>c = [<span class="hljs-string">'addd'</span>,<span class="hljs-string">'bcc'</span>,<span class="hljs-string">'cb'</span>,<span class="hljs-string">'da'</span>,<span class="hljs-string">'zz'</span>]<span class="hljs-comment"># 在这里使用lamdba函数,就是匿名函数,取元素最后一位</span><span class="hljs-comment"># key, 以什么值来做排序的依据,按照元素的最后一个字母排序(ascii码从大到小)</span><span class="hljs-meta">&gt;&gt;&gt; </span>sorted(c, key=<span class="hljs-keyword">lambda</span> x:x[<span class="hljs-number">-1</span>])  [<span class="hljs-string">'da'</span>, <span class="hljs-string">'cb'</span>, <span class="hljs-string">'bcc'</span>, <span class="hljs-string">'addd'</span>, <span class="hljs-string">'zz'</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>sorted(c, key=<span class="hljs-keyword">lambda</span> x:x[<span class="hljs-number">-1</span>], reverse=<span class="hljs-literal">True</span>)  <span class="hljs-comment"># 倒序</span>[<span class="hljs-string">'zz'</span>, <span class="hljs-string">'addd'</span>, <span class="hljs-string">'bcc'</span>, <span class="hljs-string">'cb'</span>, <span class="hljs-string">'da'</span>]<span class="hljs-meta">&gt;&gt;&gt; </span>sorted(c, key=len)[<span class="hljs-string">'cb'</span>, <span class="hljs-string">'da'</span>, <span class="hljs-string">'zz'</span>, <span class="hljs-string">'bcc'</span>, <span class="hljs-string">'addd'</span>]    <span class="hljs-comment">#按照元素长度,从小大到,reverse=True 就可以倒序</span><span class="hljs-comment">#列表中的元素是元组</span><span class="hljs-meta">&gt;&gt;&gt; </span>d = [(<span class="hljs-string">'b'</span>,<span class="hljs-number">22</span>),(<span class="hljs-string">'d'</span>,<span class="hljs-number">11</span>),(<span class="hljs-string">'a'</span>,<span class="hljs-number">33</span>),(<span class="hljs-string">'c'</span>,<span class="hljs-number">44</span>)]<span class="hljs-meta">&gt;&gt;&gt; </span>sorted(d)[(<span class="hljs-string">'a'</span>, <span class="hljs-number">33</span>), (<span class="hljs-string">'b'</span>, <span class="hljs-number">22</span>), (<span class="hljs-string">'c'</span>, <span class="hljs-number">44</span>), (<span class="hljs-string">'d'</span>, <span class="hljs-number">11</span>)]   <span class="hljs-comment">#默认按照元素的第一个值排序</span><span class="hljs-meta">&gt;&gt;&gt; </span>sorted(d, key=<span class="hljs-keyword">lambda</span> x:x[<span class="hljs-number">1</span>])[(<span class="hljs-string">'d'</span>, <span class="hljs-number">11</span>), (<span class="hljs-string">'b'</span>, <span class="hljs-number">22</span>), (<span class="hljs-string">'a'</span>, <span class="hljs-number">33</span>), (<span class="hljs-string">'c'</span>, <span class="hljs-number">44</span>)]   <span class="hljs-comment">#指定按照元素的第二个值排序</span></code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Win10共存Python2,Python3</title>
+    <link href="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/"/>
+    <url>/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/</url>
+    
+    <content type="html"><![CDATA[<p>有必要写一篇文章来分享一下设置p3和p2共存的文章，分享给大家<br>最后还有告诉大家怎么设置sub3的环境设置<br><a href="https://www.python.org/" target="_blank" rel="noopener">这是官网</a></p><a id="more"></a><blockquote><p>我这边环境是先装的2，再装的3</p></blockquote><p>选择安装的时候<code>Add Python to path</code>别忘了</p><img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/toPath.png" srcset="/img/loading.gif" class="" title="添加到系统变量"><p>Python2一样的安装方法</p><hr><h3 id="重点"><a href="#重点" class="headerlink" title="重点"></a>重点</h3><p>网上很多资料是修改python.exe文件名，但是我们不用这们麻烦<br><strong>官方其实有解决方案</strong><br>在安装Python3(&gt;=3.3)的时候，Python的安装包实际在<strong>系统中安装了一个启动器py.exe</strong>，默认<code>C:\Windows\</code>下面</p><p>当你使用:<br>下面运行的就是python2</p><blockquote><p>py -2 hello.py</p></blockquote><p>下面运行的就是python3:</p><blockquote><p>py -3 hello.py</p></blockquote><p>不想使用 - 2/3的时候，可以在<strong>脚本的最上面</strong>添加一行<code>#!python2</code> 或者 <code>#!python3</code></p><blockquote><p>定义编码<code>coding: utf-8</code>要写在第二行</p></blockquote><pre><code class="hljs python"><span class="hljs-comment">#!python2</span><span class="hljs-comment">#coding: utf-8</span></code></pre><p><strong>这样就可以解决2和3的问题</strong></p><hr><h3 id="搞定PIP的问题"><a href="#搞定PIP的问题" class="headerlink" title="搞定PIP的问题"></a>搞定PIP的问题</h3><p>使用 <code>pip -V</code>可以看到版本号(默认会按照最开始安装的pip来使用,所以pip 也能使用)</p><pre><code class="hljs powershell">pip <span class="hljs-literal">-V</span>pip <span class="hljs-number">8.1</span>.<span class="hljs-number">2</span> from c:\python27\lib\site<span class="hljs-literal">-packages</span>\pip<span class="hljs-literal">-8</span>.<span class="hljs-number">1.2</span><span class="hljs-literal">-py2</span>.<span class="hljs-number">7</span>.egg (python <span class="hljs-number">2.7</span>)</code></pre><p>当使用<code>pip3 -V</code>会出现问题</p><pre><code class="hljs powershell">pip3 <span class="hljs-literal">-V</span>Fatal error <span class="hljs-keyword">in</span> launcher: Unable to create <span class="hljs-keyword">process</span> <span class="hljs-keyword">using</span> <span class="hljs-string">'"'</span></code></pre><p>为了统一,我们就使用前面提到的py程序了<br><code>py -2 -m pip -V</code></p><pre><code class="hljs plain">pip 8.1.2 from C:\Python27\lib\site-packages\pip-8.1.2-py2.7.egg (python 2.7)</code></pre><p><code>py -3 -m pip -V</code></p><pre><code class="hljs plain">pip 9.0.1 from C:\python36\lib\site-packages (python 3.6)</code></pre><p>就可以通过这样来正常使用了</p><hr><h3 id="接下来是编译器的问题"><a href="#接下来是编译器的问题" class="headerlink" title="接下来是编译器的问题"></a>接下来是编译器的问题</h3><p>因为我使用的是Sublim Txt3,环境也需要设置一下</p><img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/newBuildSystem.png" srcset="/img/loading.gif" class="" title="选择新建编译系统"><p>首先按照步骤<code>Tools &gt; Build System &gt; New Build System</code><br>文件内容写入</p><pre><code class="hljs bash"><span class="hljs-comment"># 注意是py的路径</span>&#123;    <span class="hljs-string">"cmd"</span>: [<span class="hljs-string">"C:/Windows/py"</span>, <span class="hljs-string">"-u"</span>, <span class="hljs-string">"<span class="hljs-variable">$file</span>"</span>],    <span class="hljs-string">"file_regex"</span>: <span class="hljs-string">"^[ ]*File \"(...*?)\", line ([0-9]*)"</span>,    <span class="hljs-string">"selector"</span>: <span class="hljs-string">"source.python"</span>,&#125;</code></pre><p>保存到<strong>User目录里面</strong>,名字写个python3吧,其实通用的</p><p>以后编辑脚本的时候，在脚本最上面自定义要使用的编译器</p><img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/python3.png" srcset="/img/loading.gif" class="" title="python3"><img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/python2.png" srcset="/img/loading.gif" class="" title="python2"><hr><p>ok,全部搞定,有问题评论留言</p><hr><p><strong>补充一点pip警告的问题</strong><br><code>DEPRECATION: The default format will switch to columns in the future. You can use --format=(legacy|columns) (or define a format=(legacy|columns) in your pip.conf under the [list] section) to disable this warning</code></p><p>原则是不用管的,不会影响程序.但是遇到问题要解决它,我就是谷歌出来的,分享出来<br>在<code>C:\Users\你的账号</code>下建立pip文件夹，在pip下新建pip.ini：</p><blockquote><p>[list]<br>format=columns</p></blockquote><p><strong>或者:</strong><br>直接使用 pip freeze,  pip list 是将被弃用的</p><p>还是要解释一下大概意思:</p><blockquote><p>它就是告诉你以后pip list的默认格式会采用columns，你可以在命令后面加上–format来指定什么展示格式</p></blockquote><p><strong>解决方法:</strong></p><ol><li>加文件</li><li>改用pip freeze。</li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Mysql必知必会 &lt;1&gt; </title>
+    <link href="/2017/06/30/Mysql%E5%BF%85%E7%9F%A5%E5%BF%85%E4%BC%9A-1/"/>
+    <url>/2017/06/30/Mysql%E5%BF%85%E7%9F%A5%E5%BF%85%E4%BC%9A-1/</url>
+    
+    <content type="html"><![CDATA[<h3 id="创建用户"><a href="#创建用户" class="headerlink" title="创建用户"></a>创建用户</h3><p><strong>命令:</strong><br><code>CREATE USER &#39;username&#39;@&#39;host&#39; IDENTIFIED BY &#39;password&#39;;</code></p><a id="more"></a><p><strong>说明:</strong></p><ul><li>username - 你将创建的用户名</li><li>host - 指定该用户在哪个主机上可以登陆,如果是本地用户可用localhost, 如果想让该用户可以从任意远程主机登陆,可以使用通配符%</li><li>assword - 该用户的登陆密码,密码可以为空,如果为空则该用户可以不需要密码登陆服务器. </li></ul><p><strong>例子:</strong></p><blockquote><p><code>CREATE USER &#39;cc&#39;@&#39;localhost&#39; IDENTIFIED BY &#39;123456&#39;;</code><br><code>CREATE USER &#39;cc&#39;@&#39;192.168.1.101_&#39; IDENDIFIED BY &#39;123456&#39;;</code><br><code>CREATE USER &#39;cc&#39;@&#39;%&#39; IDENTIFIED BY &#39;123456&#39;;</code><br><code>CREATE USER cc IDENTIFIED BY &#39;123456&#39;;</code><br><code>CREATE USER &#39;cc&#39;@&#39;%&#39; IDENTIFIED BY &#39;&#39;;</code><br><code>CREATE USER &#39;cc&#39;@&#39;%&#39;;</code></p></blockquote><h3 id="授权"><a href="#授权" class="headerlink" title="授权"></a>授权</h3><p>创建的时候指定了主机名，授权的时候也需要使用用户名和主机名结合定义<br><strong>命令:</strong><br><code>GRANT privileges ON databasename.tablename TO &#39;username&#39;@&#39;host&#39;</code></p><blockquote><p><strong>可以通过授权来创建用户</strong><br><code>GRANT privileges ON databasename.tablename TO &#39;username&#39;@&#39;host&#39; IDENTIFIED BY &#39;12345&#39;</code></p></blockquote><ul><li>privileges：用户的操作权限，如SELECT，INSERT，UPDATE等，如果要授予所的权限则使用ALL</li><li>databasename：数据库名</li><li>tablename：表名，如果要授予该用户对所有数据库和表的相应操作权限则可用*表示，如* . *</li></ul><p><strong>例子</strong><br><code>GRANT ALL ON crashcourse.* TO &#39;cc&#39;@&#39;localhost&#39;</code></p><p><strong>查询权限</strong><br><code>SHOW GRANTS FOR &#39;cc&#39;@&#39;localhost&#39;;</code><br><strong>输出</strong>:</p><pre><code class="hljs bash">+-----------------------------------------------------------------------+| Grants <span class="hljs-keyword">for</span> cc@localhost                                               |                                 +-----------------------------------------------------------------------+| GRANT USAGE ON *.* TO <span class="hljs-string">'cc'</span>@<span class="hljs-string">'localhost'</span> IDENTIFIED BY PASSWORD <span class="hljs-string">'*1111'</span> || GRANT ALL PRIVILEGES ON `crashcourse`.* TO <span class="hljs-string">'cc'</span>@<span class="hljs-string">'localhost'</span>           |+-----------------------------------------------------------------------+</code></pre><h3 id="设置与更改用户密码"><a href="#设置与更改用户密码" class="headerlink" title="设置与更改用户密码"></a>设置与更改用户密码</h3><p><strong>命令:</strong><br><code>SET PASSWORD FOR &#39;username&#39;@&#39;host&#39; = PASSWORD(&#39;newpassword&#39;)</code></p><p><strong>如果是当前登陆用户用</strong><br><code>SET PASSWORD = PASSWORD(&quot;newpassword&quot;);</code></p><p><strong>例子:</strong><br><code>SET PASSWORD FOR &#39;cc&#39;@&#39;%&#39; = PASSWORD(&quot;123456&quot;);</code></p><h3 id="撤销用户权限"><a href="#撤销用户权限" class="headerlink" title="撤销用户权限"></a>撤销用户权限</h3><p>*<em>命令: *</em><br><code>REVOKE privilege ON databasename.tablename FROM &#39;username&#39;@&#39;host&#39;;</code></p><p><em><em>例子: *</em><br>`REVOKE SELECT ON *.</em> FROM ‘cc’@’%’; `</p><blockquote><p><em><em>注意: *</em><br>假如你在给用户<code>&#39;cc&#39;@&#39;%&#39;</code>授权的时候是这样的(或类似的):<code>GRANT SELECT ON test.user TO &#39;cc&#39;@&#39;%&#39;</code>, 则在使用`REVOKE SELECT ON *.</em> FROM ‘cc’@’%’<code>;命令并不能撤销该用户对test数据库中user表的SELECT 操作.相反,如果授权使用的是</code>GRANT SELECT ON <em>.</em> TO ‘cc’@’%’<code>;则</code>REVOKE SELECT ON test.user FROM ‘cc’@’%’`;命令也不能撤销该用户对test数据库中user表的Select 权限. </p></blockquote><h3 id="删除用户"><a href="#删除用户" class="headerlink" title="删除用户"></a>删除用户</h3><p><strong>命令:</strong><br><code>DROP USER &#39;username&#39;@&#39;host&#39;;</code></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>db</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>mysql</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>无缝升级Grafana</title>
+    <link href="/2017/06/30/grafana/"/>
+    <url>/2017/06/30/grafana/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>No matter where your data is, or what kind of database it lives in, you can bring it together with Grafana. Beautifully.<br><a href="https://grafana.com/" target="_blank" rel="noopener">下载地址</a></p></blockquote><p>目前使用的Grafana是3.0.2的版本，现在版本到了4.3，加入了很多新特性，页面也更美观，让我们来升级吧</p><a id="more"></a><h3 id="备份老的数据"><a href="#备份老的数据" class="headerlink" title="备份老的数据"></a>备份老的数据</h3><p>单单在页面上将Dashbord　Export出来是没有用的，因为数据源是没法这样操作的，需要我们备份数据库文件、配置文件</p><blockquote><p>配置文件:<code>/etc/grafana/grafana.init</code><br>数据文件:<code>/var/lib/grafana/grafana.db</code></p></blockquote><h3 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h3><pre><code class="hljs powershell">wget https://s3<span class="hljs-literal">-us</span><span class="hljs-literal">-west</span><span class="hljs-literal">-2</span>.amazonaws.com/grafana<span class="hljs-literal">-releases</span>/release/grafana<span class="hljs-literal">-4</span>.<span class="hljs-number">3.2</span><span class="hljs-literal">-1</span>.x86_64.rpm yum localinstall grafana<span class="hljs-literal">-4</span>.<span class="hljs-number">3.2</span><span class="hljs-literal">-1</span>.x86_64.rpm</code></pre><p>通过这个命令就可直接升级本地Grafana</p><h3 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h3><p>将备份的数据直接覆盖到目录，重启grafana-server服务。</p><h3 id="提示"><a href="#提示" class="headerlink" title="提示"></a>提示</h3><p>如果需要插件，可以去<a href="https://grafana.com/plugins" target="_blank" rel="noopener">插件中心</a>下载<br>升级以后如果某一个插件无法使用了，可以卸了再重新安装</p><p><strong>卸载插件</strong><br><code>grafana-cli plugins remove &lt;plugin-id&gt;</code></p><p><strong>升级某一个插件</strong><br><code>grafana-cli plugins update &lt;plugin-id&gt;</code></p><p><strong>安装最新的插件</strong><br><code>grafana-cli plugins install &lt;plugin-id&gt;</code></p><p><strong>升级所有插件</strong><br><code>grafana-cli plugins update-all</code></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>grafana</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Hexo添加LiveRe评论系统</title>
+    <link href="/2017/06/29/livere/"/>
+    <url>/2017/06/29/livere/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>参照的是这位<a href="https://blog.smoker.cc/web/add-comments-livere-for-hexo-theme-next.html" target="_blank" rel="noopener">大虾的分享</a>添加来必力评论系统，在这里就不重复造轮子了，只提一些注意事项</p></blockquote><a id="more"></a><hr><p><code>layout/_scripts/third-party/comments/</code>目录中添加 <code>livere.swig</code><br><code>layout/_scripts/third-party/comments.swig</code> </p><blockquote><p>third-party、comments、comments.swig、livere.swig 这四个文件需要自己创建</p></blockquote><p><code>livere_uid: your uid</code></p><blockquote><p>配置在<code>theme/next/_config.xml</code>中已经有了，不需要重复添加，修改uid即可</p></blockquote><p><code>layout/_partials/comments.swig</code>文件中条件最后追加 LiveRe 插件是否引用的判断逻辑：</p><blockquote><p>判断条件已经存在不需要追加</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>hexo</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>将Next+Hexo备份至GitHub</title>
+    <link href="/2017/06/28/addhexobranch/"/>
+    <url>/2017/06/28/addhexobranch/</url>
+    
+    <content type="html"><![CDATA[<p>当Blog使用Hexo+Next的情况下，使用了Next的主题，要将本地源文件push到GitHub，配置是无法上传的，这样更换电脑以后，配置会很麻烦<br>下面介绍一种方法，分享给大家</p><a id="more"></a><hr><h4 id="首先备份（上传到GitHub）"><a href="#首先备份（上传到GitHub）" class="headerlink" title="首先备份（上传到GitHub）"></a>首先备份（上传到GitHub）</h4><ol><li><p>准备前的工作：</p><ul><li>username.github.io命名的仓库</li><li>创建两个分支，master和hexo（任意名字）</li><li>本地有hexo源文件</li><li>将hexo分支设置为默认的分支<blockquote><p>master分支负责的是将源文件中生成的静态文件显示到页面，不要修改</p></blockquote></li></ul></li><li><p>将本地hexo源文件中的_config.yml，themes/，source/，scaffolds/，package.json，.gitignore复制至username.github.io文件夹</p></li><li><p>将themes/next/主题中的.git文件夹删除</p><blockquote><p>不删除将无法push</p></blockquote></li><li><p>在这个目录中，创建站点，分别使用下面命令(需要确认是不是hexo分支，git branch)</p><pre><code class="hljs bash"><span class="hljs-comment"># mac需要sudo</span>(sudo)npm install(sudo)npm install hexo-cli -g(sudo)npm install hexo-deployer-git</code></pre></li><li><p>执行git add .、git commit -m “提交内容描述”、git push origin hexo，提交hexo源文件到GitHub</p></li></ol><h4 id="修改-上传"><a href="#修改-上传" class="headerlink" title="修改(上传)"></a>修改(上传)</h4><p>当你在本地修改内容(主题,文章,页面…)后：</p><ol><li>分别执行<strong>git add .</strong>、 <strong>git commit -m “描述”</strong>、<strong>git push origin hexo</strong>，将修改内容提交到GitHub</li><li>然后在执行<strong>hexo g -d</strong> 将文章发布出去</li></ol><h4 id="其他电脑恢复"><a href="#其他电脑恢复" class="headerlink" title="其他电脑恢复"></a>其他电脑恢复</h4><blockquote><p>首先本地要安装<a href="https://nodejs.org/" target="_blank" rel="noopener">node.js</a>,<a href="https://github.com/" target="_blank" rel="noopener">git</a></p></blockquote><ol><li>将仓库clone到本地<pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> git@github.com:username@username.github.io.git</code></pre></li><li>安装一遍Hexo咯(进入目录中)<pre><code class="hljs powershell">npm install npm install hexo<span class="hljs-literal">-cli</span> gnpm install hexo<span class="hljs-literal">-deployer</span><span class="hljs-literal">-git</span></code></pre>这样就好了，快去试试吧</li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>hexo</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Bash Shell快捷键</title>
+    <link href="/2017/06/27/bash-command/"/>
+    <url>/2017/06/27/bash-command/</url>
+    
+    <content type="html"><![CDATA[<p>简单记录一下shell下常用的快捷键</p><a id="more"></a><h3 id="移动光标"><a href="#移动光标" class="headerlink" title="移动光标"></a>移动光标</h3><ul><li><code>crtl+b</code>：前移一个字符</li><li><code>ctrl+f</code>：后移一个字符</li><li><code>alt+b</code>：迁移一个单词</li><li><code>alt+f</code>：后移一个单词</li><li><code>0</code>：移到行首</li><li><code>$</code>：移到行尾</li><li><code>ctrl+x</code>：行首到当前光标替换</li><li><font color=red><code>ESC+f</code>：移动到下一个单词</li><li><font color=red><code>ESC+b</code>：移动到上一个单词</li></ul><h3 id="编辑命令"><a href="#编辑命令" class="headerlink" title="编辑命令"></a>编辑命令</h3><ul><li><code>alt+d</code>：删除当前光标到临近右边单词开始(delete)</li><li><code>ctrl+w</code>： 删除当前光标到临近左边单词结束(word)</li><li><code>ctrl+h</code>： 删除光标前一个字符（相当于backspace）</li><li><code>ctrl+d</code>： 删除光标后一个字符（相当于delete）</li><li><font color=red><code>ctrl+u</code>： 删除光标左边所有</li><li><font color=red><code>ctrl+k</code>： 删除光标右边所有</li><li><code>ctrl+l</code>： 清屏</li><li><code>ctrl+shift+c</code>：复制（相当于鼠标左键拖拽）</li><li><code>ctrl+shift+v</code>： 粘贴（相当于鼠标中键）</li></ul><h3 id="其他命令"><a href="#其他命令" class="headerlink" title="其他命令"></a>其他命令</h3><ul><li><code>ctrl+r</code>：查找历史命令，输入关键字。</li></ul><h3 id="Vim"><a href="#Vim" class="headerlink" title="Vim"></a>Vim</h3><ul><li><code>dw</code>：从当前光标开始删除到下一个单词头</li><li><code>de</code>： 从当前光标开始删除到单词尾</li><li><code>dW</code>：从当前光标开始删除到行尾</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>shell</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>uWSGI 部署Django</title>
+    <link href="/2017/06/27/uwsgi/"/>
+    <url>/2017/06/27/uwsgi/</url>
+    
+    <content type="html"><![CDATA[<p>本文主要介绍的是nginx + uwsgi 来为django应用提供服务<br>nginx 后续在补充,本文是直接使用uwsgi<br>之所以没有选择apache是因为公司的生产环境大部分是nginx做服务器软件的。<br><a href="http://python.usyiyi.cn/django/howto/deployment/wsgi/uwsgi.html" target="_blank" rel="noopener">这是官方中文文档</a></p><a id="more"></a><hr><p>web应用部署，应该是对 web应用 + web应用服务器软件 + web服务器软件 的组合操作</p><p><strong>web应用</strong>顾名思义就是你的web project，这可以是java web项目，<strong>django项目</strong>或者php项目；<br><strong>web应用服务器软件</strong>就是运行web应用的地方，例如java用的tomcat服务器，<strong>django用的uwsgi服务器</strong><br>正常情况下你只需要将<strong>web项目</strong>部署在<strong>应用服务器软件</strong>上就可以对外提供服务了</p><hr><h2 id="使用–ini的方式"><a href="#使用–ini的方式" class="headerlink" title="使用–ini的方式"></a>使用–ini的方式</h2><blockquote><p>好处是通过配置文件的方式启动,可以后台运行,灵活加载配置</p></blockquote><p>当创建好了project以后，会在project下生成一个wsgi.py 的文件<br><img src="/images/uwsgi.jpg" srcset="/img/loading.gif" alt="@我创建的一个project结构 "></p><hr><h3 id="创建一个目录-负责存放ini的文件"><a href="#创建一个目录-负责存放ini的文件" class="headerlink" title="创建一个目录,负责存放ini的文件"></a>创建一个目录,负责存放ini的文件</h3><p>我这里使用tailon,名字随意取得<br>然后创建存放pid(可以动态加载pid,不用kill 和重启 )的目录和日志的目录<br>下面是自定义的一个ini文件内容</p><pre><code class="hljs bash">[uwsgi]<span class="hljs-comment"># project的路径</span><span class="hljs-built_in">chdir</span>=/root/xudeng/delay_web<span class="hljs-comment"># module：使用的WSGI 模块 —— 可以是startproject 创建的mysite.wsgi 模块。</span>module=delay_web.wsgi:application<span class="hljs-comment"># env 环境的路径</span>home=/root/xudeng/delay_web/dw_envmaster=True<span class="hljs-comment"># 启动十个子进程</span>processes = 10<span class="hljs-comment"># 端口号</span>http-socket=:9999buffer-size=65535vacuum=Truemax-requests=5000daemonize=/var/<span class="hljs-built_in">log</span>/uwsgi/yourproject.log<span class="hljs-comment"># static-map= /static/=/home/qqdz/work/src/github.com/shwinpiocess/magina_project/magina/logs/static/</span><span class="hljs-comment"># 保存pid的路径</span>pidfile=/root/xudeng/delay_web/tailon/pid/test.pid</code></pre><hr><h3 id="启动和重新加载的命令"><a href="#启动和重新加载的命令" class="headerlink" title="启动和重新加载的命令"></a>启动和重新加载的命令</h3><p><strong>启动命令</strong></p><pre><code class="hljs bash">uwsgi --ini tailon/test.ini</code></pre><p><strong>重新加载命令</strong></p><pre><code class="hljs bash">uwsgi --reload tailon/pid/test.pid</code></pre><p><strong>使用kill发送信号</strong></p><pre><code class="hljs bash"><span class="hljs-built_in">kill</span> -HUP `cat /tmp/project-master.pid`</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>django</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>django</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>printf的使用</title>
+    <link href="/2017/06/26/up-day/"/>
+    <url>/2017/06/26/up-day/</url>
+    
+    <content type="html"><![CDATA[<p>printf 命令的语法：</p><blockquote><p><code>printf  format-string  [arguments...]</code></p></blockquote><a id="more"></a><p><strong>参数说明：</strong></p><ul><li><code>format-string</code>: 为格式控制字符串</li><li><code>arguments</code>: 为参数列表。</li></ul><pre><code class="hljs powershell"><span class="hljs-keyword">for</span>((a=<span class="hljs-number">0</span>; a&lt;=<span class="hljs-number">10</span>; a++))<span class="hljs-keyword">do</span>    <span class="hljs-keyword">for</span>((b=<span class="hljs-number">0</span>; b&lt;=<span class="hljs-number">10</span>; b++))    <span class="hljs-keyword">do</span>       printf <span class="hljs-literal">-v</span> file <span class="hljs-string">"%s %02d:%02d:00"</span> <span class="hljs-number">0618</span> <span class="hljs-variable">$a</span> <span class="hljs-variable">$b</span><span class="hljs-comment">#       grep "$file" 1.txt</span>    donedone</code></pre><p>结果为:</p><pre><code class="hljs powershell"><span class="hljs-number">0618</span> <span class="hljs-number">09</span>:<span class="hljs-number">02</span>:<span class="hljs-number">00</span><span class="hljs-number">0618</span> <span class="hljs-number">09</span>:<span class="hljs-number">03</span>:<span class="hljs-number">00</span><span class="hljs-number">0618</span> <span class="hljs-number">09</span>:<span class="hljs-number">04</span>:<span class="hljs-number">00</span><span class="hljs-number">0618</span> <span class="hljs-number">09</span>:<span class="hljs-number">05</span>:<span class="hljs-number">00</span>...</code></pre><blockquote><p><code>printf -v file</code> 是指将输出结果使用file变量存储<br>通过<code>$file</code> 来调用打印<br><code>%02d</code> 显示两位,不足两位整数用0补齐</p></blockquote><p><a href="http://www.linuxdaxue.com/explain-of-shell-printf-command.html" target="_blank" rel="noopener">printf文档</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>shell</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>

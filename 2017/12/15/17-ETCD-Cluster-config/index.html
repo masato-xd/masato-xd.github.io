@@ -1,383 +1,190 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="zh-Hans">
 
 
 
-  
 
 
-<html class="theme-next muse use-motion" lang="zh-Hans">
 <head>
-  <meta charset="UTF-8"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-
-
-
-
-
-
-
-
-
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="Sow nothing, reap nothing.">
+  <meta name="author" content="Xu D.">
+  <meta name="keywords" content="undefined">
+  <title>Etcd集群配置 - 律己宽人</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
 
 
 
 
-  
-  
-  
-  
+<link  rel="stylesheet" href="/css/main.css" />
 
-  
-    
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-    
-    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  
-
-
-
-
-
-
-<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
-
-<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
-
-
-  <meta name="keywords" content="etcd," />
-
-
-
-
-
-
-
-
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
-
-
-
-
-
-
-<meta name="description" content="etcd是以实现共享配置和服务发现为目的提供一致性的键值存储的分布式数据库。著名的容器编排系统kubernetes项目使用了etcd。     服务器环境：    ip client_port peer_port    10.20.48.107 2379 2380   10.20.48.108 2379 2380   10.20.48.109 2379 2380">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Etcd集群配置">
-<meta property="og:url" content="https://masato-xd.github.io/2017/12/15/17-ETCD-Cluster-config/index.html">
-<meta property="og:site_name" content="律己宽人">
-<meta property="og:description" content="etcd是以实现共享配置和服务发现为目的提供一致性的键值存储的分布式数据库。著名的容器编排系统kubernetes项目使用了etcd。     服务器环境：    ip client_port peer_port    10.20.48.107 2379 2380   10.20.48.108 2379 2380   10.20.48.109 2379 2380">
-<meta property="article:published_time" content="2017-12-15T15:17:47.000Z">
-<meta property="article:modified_time" content="2020-05-27T15:04:23.075Z">
-<meta property="article:author" content="Xu D.">
-<meta property="article:tag" content="etcd">
-<meta name="twitter:card" content="summary">
-
-
-
-<script type="text/javascript" id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '/',
-    scheme: 'Muse',
-    sidebar: {"position":"left","display":"hide","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
-    fancybox: true,
-    motion: true,
-    duoshuo: {
-      userId: '0',
-      author: '博主'
-    },
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
-
-
-
-  <link rel="canonical" href="https://masato-xd.github.io/2017/12/15/17-ETCD-Cluster-config/"/>
-
-
-
-
-
-  <title>Etcd集群配置 | 律己宽人</title>
-  
-
-
-
-
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "//tajs.qq.com/stats?sId=63180312";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
-  </script>
-
-
-
-
-
-
+<!-- 自定义样式保持在最底部 -->
 
 
 <meta name="generator" content="Hexo 4.2.1"></head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
 
-  
-  
-    
-  
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Fluid</strong>&nbsp;</a>
 
-  <div class="container sidebar-position-left page-post-detail ">
-    <div class="headband"></div>
-
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
-  <div class="site-meta ">
-    
-
-    <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">律己宽人</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
-      
-        <p class="site-subtitle"></p>
-      
-  </div>
-
-  <div class="site-nav-toggle">
-    <button>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
     </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              ホーム</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              アーカイブ</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              カテゴリー</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              タグ</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              本ブログ情報　</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
   </div>
-</div>
-
-<nav class="site-nav">
-  
-
-  
-    <ul id="menu" class="menu">
-      
-        
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            首页
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-categories">
-          <a href="/categories/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
-            
-            分类
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-tags">
-          <a href="/tags/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
-            
-            标签
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-archives">
-          <a href="/archives/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            归档
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-about">
-          <a href="/about/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
-            
-            Xu
-          </a>
-        </li>
-      
-
-      
-    </ul>
-  
-
-  
 </nav>
 
-
-
- </div>
-    </header>
-
-    <main id="main" class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
-    
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="https://masato-xd.github.io/2017/12/15/17-ETCD-Cluster-config/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Xu D.">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/huojian.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="律己宽人">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">Etcd集群配置</h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-15T23:17:47+08:00">
-                2017-12-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/db/" itemprop="url" rel="index">
-                    <span itemprop="name">db</span>
-                  </a>
-                </span>
-
-                
-                
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
               
             </span>
-          
 
-          
             
-          
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2017-12-15 23:17">
+                    December 15, 2017 pm
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    988 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    16
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
 
           
-          
-
-          
-            <span class="post-meta-divider">|</span>
-            <span class="page-pv"><i class="fa fa-file-o"></i> 浏览
-            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>次
-            </span>
-          
-
-          
-
-          
-
         </div>
-      </header>
+      </div>
+    </div>
+  </header>
+
+  <main>
     
-
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
-      
-        <div class="note info"><p><strong>etcd</strong>是以实现<em>共享配置和服务发现</em>为目的提供一致性的键值存储的分布式数据库。<br>著名的容器编排系统kubernetes项目使用了etcd。</p>
-</div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <div class="note note-info">
+            <p><strong>etcd</strong>是以实现<em>共享配置和服务发现</em>为目的提供一致性的键值存储的分布式数据库。<br>著名的容器编排系统kubernetes项目使用了etcd。</p>
+          </div>
 
 
 
@@ -418,446 +225,377 @@
 <li>在<code>/etc/profile</code>中添加环境变量<code>export ETCDCTL_API=3</code></li>
 </ul>
 <p><strong>配置说明：</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="comment">#节点的名称</span></span><br><span class="line"><span class="attr">initial-advertise-peer-urls:</span> <span class="comment">#该成员的对等url列表，用于向集群的其他成员通告（告诉其他成员通过什么url和我通信）</span></span><br><span class="line"><span class="attr">listen-peer-urls:</span>	<span class="comment"># 本地监听，接收同等节点请求的端口</span></span><br><span class="line"><span class="attr">listen-client-urls:</span>  <span class="comment"># 本地监听，接受客户端请求的端口</span></span><br><span class="line"><span class="attr">advertise-client-urls:</span> <span class="comment"># 该成员的客户端url的列表，用于向所有人通告（告知所有人client访问我的哪儿）</span></span><br><span class="line"><span class="attr">initial-cluster-token:</span>  <span class="comment"># 集群唯一令牌，识别不同的集群</span></span><br><span class="line"><span class="attr">initial-cluster:</span> <span class="comment"># 集群的成员，name是前面指定name</span></span><br><span class="line"><span class="attr">initial-cluster-state:</span> <span class="comment"># 初始集群的状态，有“new,existing”</span></span><br><span class="line"><span class="attr">data-dir:</span> <span class="comment"># 数据存储的目录</span></span><br></pre></td></tr></table></figure>
+<pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-comment">#节点的名称</span>
+<span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-comment">#该成员的对等url列表，用于向集群的其他成员通告（告诉其他成员通过什么url和我通信）</span>
+<span class="hljs-attr">listen-peer-urls:</span>	<span class="hljs-comment"># 本地监听，接收同等节点请求的端口</span>
+<span class="hljs-attr">listen-client-urls:</span>  <span class="hljs-comment"># 本地监听，接受客户端请求的端口</span>
+<span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-comment"># 该成员的客户端url的列表，用于向所有人通告（告知所有人client访问我的哪儿）</span>
+<span class="hljs-attr">initial-cluster-token:</span>  <span class="hljs-comment"># 集群唯一令牌，识别不同的集群</span>
+<span class="hljs-attr">initial-cluster:</span> <span class="hljs-comment"># 集群的成员，name是前面指定name</span>
+<span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-comment"># 初始集群的状态，有“new,existing”</span>
+<span class="hljs-attr">data-dir:</span> <span class="hljs-comment"># 数据存储的目录</span></code></pre>
 
 <p><strong>配置文件：</strong><br>我们通过配置文件的方式启动<br>etcd1：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">"etcd1"</span></span><br><span class="line"><span class="attr">initial-advertise-peer-urls:</span> <span class="string">"http://10.20.48.107:2380"</span></span><br><span class="line"><span class="attr">listen-peer-urls:</span> <span class="string">"http://10.20.48.107:2380"</span></span><br><span class="line"><span class="attr">listen-client-urls:</span> <span class="string">"http://10.20.48.107:2379,http://127.0.0.1:2379"</span></span><br><span class="line"><span class="attr">advertise-client-urls:</span> <span class="string">"http://10.20.48.107:2379"</span></span><br><span class="line"><span class="attr">initial-cluster-token:</span> <span class="string">"heyhey-etcd"</span></span><br><span class="line"><span class="attr">initial-cluster:</span> <span class="string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span></span><br><span class="line"><span class="attr">initial-cluster-state:</span> <span class="string">"new"</span></span><br><span class="line"><span class="attr">data-dir:</span> <span class="string">"/home/qqdz/etcd/etcd1"</span></span><br></pre></td></tr></table></figure>
+<pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd1"</span>
+<span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.107:2380"</span>
+<span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.107:2380"</span>
+<span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.107:2379,http://127.0.0.1:2379"</span>
+<span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.107:2379"</span>
+<span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span>
+<span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span>
+<span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span>
+<span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd1"</span></code></pre>
 
 <p>etcd2：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">"etcd2"</span></span><br><span class="line"><span class="attr">initial-advertise-peer-urls:</span> <span class="string">"http://10.20.48.108:2380"</span></span><br><span class="line"><span class="attr">listen-peer-urls:</span> <span class="string">"http://10.20.48.108:2380"</span></span><br><span class="line"><span class="attr">listen-client-urls:</span> <span class="string">"http://10.20.48.108:2379,http://127.0.0.1:2379"</span></span><br><span class="line"><span class="attr">advertise-client-urls:</span> <span class="string">"http://10.20.48.108:2379"</span></span><br><span class="line"><span class="attr">initial-cluster-token:</span> <span class="string">"heyhey-etcd"</span></span><br><span class="line"><span class="attr">initial-cluster:</span> <span class="string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span></span><br><span class="line"><span class="attr">initial-cluster-state:</span> <span class="string">"new"</span></span><br><span class="line"><span class="attr">data-dir:</span> <span class="string">"/home/qqdz/etcd/etcd2"</span></span><br></pre></td></tr></table></figure>
+<pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd2"</span>
+<span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.108:2380"</span>
+<span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.108:2380"</span>
+<span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.108:2379,http://127.0.0.1:2379"</span>
+<span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.108:2379"</span>
+<span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span>
+<span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span>
+<span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span>
+<span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd2"</span></code></pre>
 
 <p>etcd3：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">"etcd3"</span></span><br><span class="line"><span class="attr">initial-advertise-peer-urls:</span> <span class="string">"http://10.20.48.109:2380"</span></span><br><span class="line"><span class="attr">listen-peer-urls:</span> <span class="string">"http://10.20.48.109:2380"</span></span><br><span class="line"><span class="attr">listen-client-urls:</span> <span class="string">"http://10.20.48.109:2379,http://127.0.0.1:2379"</span></span><br><span class="line"><span class="attr">advertise-client-urls:</span> <span class="string">"http://10.20.48.109:2379"</span></span><br><span class="line"><span class="attr">initial-cluster-token:</span> <span class="string">"heyhey-etcd"</span></span><br><span class="line"><span class="attr">initial-cluster:</span> <span class="string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span></span><br><span class="line"><span class="attr">initial-cluster-state:</span> <span class="string">"new"</span></span><br><span class="line"><span class="attr">data-dir:</span> <span class="string">"/home/qqdz/etcd/etcd3"</span></span><br></pre></td></tr></table></figure>
+<pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">"etcd3"</span>
+<span class="hljs-attr">initial-advertise-peer-urls:</span> <span class="hljs-string">"http://10.20.48.109:2380"</span>
+<span class="hljs-attr">listen-peer-urls:</span> <span class="hljs-string">"http://10.20.48.109:2380"</span>
+<span class="hljs-attr">listen-client-urls:</span> <span class="hljs-string">"http://10.20.48.109:2379,http://127.0.0.1:2379"</span>
+<span class="hljs-attr">advertise-client-urls:</span> <span class="hljs-string">"http://10.20.48.109:2379"</span>
+<span class="hljs-attr">initial-cluster-token:</span> <span class="hljs-string">"heyhey-etcd"</span>
+<span class="hljs-attr">initial-cluster:</span> <span class="hljs-string">"etcd1=http://10.20.48.107:2380,etcd2=http://10.20.48.108:2380,etcd3=http://10.20.48.109:2380"</span>
+<span class="hljs-attr">initial-cluster-state:</span> <span class="hljs-string">"new"</span>
+<span class="hljs-attr">data-dir:</span> <span class="hljs-string">"/home/qqdz/etcd/etcd3"</span></code></pre>
 <p><strong>启动脚本：</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">startwork()</span><br><span class="line">&#123;</span><br><span class="line">        nohup /usr/<span class="built_in">local</span>/bin/etcd --config-file /home/qqdz/etcd/etcd.yml  &amp; </span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"ps x | grep \"etcd\""</span></span><br><span class="line">        ps x|grep <span class="string">"etcd"</span>   </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">stopwork()</span><br><span class="line">&#123;</span><br><span class="line">        SERVERLIST=<span class="string">'etcd'</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> serv <span class="keyword">in</span> <span class="variable">$SERVERLIST</span></span><br><span class="line">        <span class="keyword">do</span></span><br><span class="line">                <span class="built_in">echo</span> <span class="string">"stop <span class="variable">$serv</span>"</span></span><br><span class="line">                ps aux|grep <span class="string">"/<span class="variable">$serv</span>"</span>|sed -e <span class="string">"/grep/d"</span>|awk <span class="string">'&#123;print $2&#125;'</span>|xargs <span class="built_in">kill</span> 2&amp;&gt;/dev/null</span><br><span class="line">                sleep 1</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="built_in">test</span> -f run.sh</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">        count=`ps x|grep <span class="string">"etcd-c"</span>|sed -e <span class="string">'/grep/d'</span>|wc -l`</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"running server:"</span><span class="variable">$count</span></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$count</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        sleep 1</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"-------------------start-----------------------"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></span><br><span class="line">stop)</span><br><span class="line">    stopwork</span><br><span class="line">;;</span><br><span class="line">start)</span><br><span class="line">    startwork</span><br><span class="line">;;</span><br><span class="line">*)</span><br><span class="line">    stopwork</span><br><span class="line">    sleep 1</span><br><span class="line">    startwork</span><br><span class="line">;;</span><br><span class="line"><span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"-------------------end-----------------------"</span></span><br></pre></td></tr></table></figure>
+<pre><code class="hljs bash"><span class="hljs-meta">#!/bin/sh</span>
+
+startwork()
+&#123;
+        nohup /usr/<span class="hljs-built_in">local</span>/bin/etcd --config-file /home/qqdz/etcd/etcd.yml  &amp; 
+
+        <span class="hljs-built_in">echo</span> <span class="hljs-string">"ps x | grep \"etcd\""</span>
+        ps x|grep <span class="hljs-string">"etcd"</span>   
+&#125;
+
+stopwork()
+&#123;
+        SERVERLIST=<span class="hljs-string">'etcd'</span>
+
+        <span class="hljs-keyword">for</span> serv <span class="hljs-keyword">in</span> <span class="hljs-variable">$SERVERLIST</span>
+        <span class="hljs-keyword">do</span>
+                <span class="hljs-built_in">echo</span> <span class="hljs-string">"stop <span class="hljs-variable">$serv</span>"</span>
+                ps aux|grep <span class="hljs-string">"/<span class="hljs-variable">$serv</span>"</span>|sed -e <span class="hljs-string">"/grep/d"</span>|awk <span class="hljs-string">'&#123;print $2&#125;'</span>|xargs <span class="hljs-built_in">kill</span> 2&amp;&gt;/dev/null
+                sleep 1
+        <span class="hljs-keyword">done</span>
+
+    <span class="hljs-keyword">while</span> <span class="hljs-built_in">test</span> -f run.sh
+    <span class="hljs-keyword">do</span>
+        count=`ps x|grep <span class="hljs-string">"etcd-c"</span>|sed -e <span class="hljs-string">'/grep/d'</span>|wc -l`
+        <span class="hljs-built_in">echo</span> <span class="hljs-string">"running server:"</span><span class="hljs-variable">$count</span>
+        <span class="hljs-keyword">if</span> [ <span class="hljs-variable">$count</span> -eq 0 ]; <span class="hljs-keyword">then</span>
+            <span class="hljs-built_in">break</span>
+        <span class="hljs-keyword">fi</span>
+        sleep 1
+    <span class="hljs-keyword">done</span>
+&#125;
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">"-------------------start-----------------------"</span>
+
+<span class="hljs-keyword">case</span> <span class="hljs-variable">$1</span> <span class="hljs-keyword">in</span>
+stop)
+    stopwork
+;;
+start)
+    startwork
+;;
+*)
+    stopwork
+    sleep 1
+    startwork
+;;
+<span class="hljs-keyword">esac</span>
+
+<span class="hljs-built_in">echo</span> <span class="hljs-string">"-------------------end-----------------------"</span></code></pre>
 
 
 
 <p><strong>常用命令：</strong><br>获取etcd所有的keys<br><code>ETCDCTL_API=3 etcdctl get &quot;&quot; --prefix=true</code><br><code>ETCDCTL_API=3 etcdctl get &quot;&quot; --from-key</code></p>
 <p>查看集群状态<br>在<code>.bash_profile</code>中添加下面语句，这样每次登录都会自动加载变量<br><code>ENDPOINTS=10.20.48.107:2379,10.20.48.108:2379,10.20.48.109:2379</code><br><code>export ENDPOINTS</code></p>
 <p>通过下面命令查看集群状态：<br><code>etcdctl --write-out=table --endpoints=$ENDPOINTS endpoint status</code></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]$ etcdctl --write-out=table --endpoints=<span class="variable">$ENDPOINTS</span> endpoint status     </span><br><span class="line">+-------------------+------------------+---------+---------+-----------+-----------+------------+</span><br><span class="line">|     ENDPOINT      |        ID        | VERSION | DB SIZE | IS LEADER | RAFT TERM | RAFT INDEX |</span><br><span class="line">+-------------------+------------------+---------+---------+-----------+-----------+------------+</span><br><span class="line">| 10.20.48.107:2379 | 40c1a9f933c13188 | 3.1.11  | 33 kB   | <span class="literal">true</span>      |       176 |         41 |</span><br><span class="line">| 10.20.48.108:2379 | c0598886ee4f3484 | 3.1.11  | 33 kB   | <span class="literal">false</span>     |       176 |         41 |</span><br><span class="line">| 10.20.48.109:2379 | 3837344de92ee822 | 3.1.11  | 33 kB   | <span class="literal">false</span>     |       176 |         41 |</span><br><span class="line">+-------------------+------------------+---------+---------+-----------+-----------+------------+</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs bash">[root@localhost ~]$ etcdctl --write-out=table --endpoints=<span class="hljs-variable">$ENDPOINTS</span> endpoint status     
++-------------------+------------------+---------+---------+-----------+-----------+------------+
+|     ENDPOINT      |        ID        | VERSION | DB SIZE | IS LEADER | RAFT TERM | RAFT INDEX |
++-------------------+------------------+---------+---------+-----------+-----------+------------+
+| 10.20.48.107:2379 | 40c1a9f933c13188 | 3.1.11  | 33 kB   | <span class="hljs-literal">true</span>      |       176 |         41 |
+| 10.20.48.108:2379 | c0598886ee4f3484 | 3.1.11  | 33 kB   | <span class="hljs-literal">false</span>     |       176 |         41 |
+| 10.20.48.109:2379 | 3837344de92ee822 | 3.1.11  | 33 kB   | <span class="hljs-literal">false</span>     |       176 |         41 |
++-------------------+------------------+---------+---------+-----------+-----------+------------+</code></pre>
 
 <p>通过下面命令查看健康状态：<br><code>etcdctl --write-out=table --endpoints=$ENDPOINTS endpoint health</code></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]$ etcdctl --endpoints=<span class="variable">$ENDPOINTS</span> endpoint health                </span><br><span class="line">10.20.48.107:2379 is healthy: successfully committed proposal: took = 1.249516ms</span><br><span class="line">10.20.48.109:2379 is healthy: successfully committed proposal: took = 1.415811ms</span><br><span class="line">10.20.48.108:2379 is healthy: successfully committed proposal: took = 1.487734ms</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs bash">[root@localhost ~]$ etcdctl --endpoints=<span class="hljs-variable">$ENDPOINTS</span> endpoint health                
+10.20.48.107:2379 is healthy: successfully committed proposal: took = 1.249516ms
+10.20.48.109:2379 is healthy: successfully committed proposal: took = 1.415811ms
+10.20.48.108:2379 is healthy: successfully committed proposal: took = 1.487734ms</code></pre>
 
 <p>启动Etcd网关：<br><code>etcd gateway start --endpoints=10.20.48.107:2379,10.20.48.108:2379,10.20.48.109:2379 --listen-addr=&quot;127.0.0.1:23790&quot;</code></p>
 <hr>
 <p>资料：<br><a href="https://coreos.com/etcd/docs/latest/dev-guide/interacting_v3.html" target="_blank" rel="noopener">Etcd交互</a><br><a href="https://github.com/coreos/etcd/blob/master/etcd.conf.yml.sample" target="_blank" rel="noopener">Etcd–config-file配置模板</a><br><a href="https://coreos.com/etcd/docs/latest/op-guide/configuration.html" target="_blank" rel="noopener">Etcd配置说明</a></p>
 
-      
-    </div>
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/db/">db</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/etcd/">etcd</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/12/23/18-python-rex/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python正则表达式的5个小贴士</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/12/15/16-CentOs-7-x-install-python3-6/">
+                        <span class="hidden-mobile">CentOs 7.X下Python3与Python2共存</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
 
-    <div>
-      
-        
-
-      
-    </div>
-
-    <div>
-      
-        
-
-      
-    </div>
-
-    <div>
-      
-        
-  <ul class="post-copyright">
-    <li class="post-copyright-author">
-      <strong>本文作者：</strong>
-      Xu D.
-    </li>
-    <li class="post-copyright-link">
-      <strong>本文链接：</strong>
-      <a href="https://masato-xd.github.io/2017/12/15/17-ETCD-Cluster-config/" title="Etcd集群配置">https://masato-xd.github.io/2017/12/15/17-ETCD-Cluster-config/</a>
-    </li>
-    <li class="post-copyright-license">
-      <strong>版权声明： </strong>
-      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
-    </li>
-  </ul>
-
-
-      
-    </div>
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/etcd/" rel="tag"># etcd</a>
-          
-        </div>
-      
-
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/2017/12/15/16-CentOs-7-x-install-python3-6/" rel="next" title="CentOs 7.X下Python3与Python2共存">
-                <i class="fa fa-chevron-left"></i> CentOs 7.X下Python3与Python2共存
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/12/23/18-python-rex/" rel="prev" title="Python正则表达式的5个小贴士">
-                Python正则表达式的5个小贴士 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
-      
-
-      
-      
-    </footer>
-  </article>
-
-
-
-    <div class="post-spread">
-      
-    </div>
-  </div>
-
-
-          </div>
-          
-
-
-          
-  <div class="comments" id="comments">
-    
-      <div id="lv-container" data-id="city" data-uid="MTAyMC8yOTI1NS81ODIz"></div>
-    
-  </div>
-
-
-        </div>
-        
-          
-  
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
-  </div>
-
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-inner">
-
-      
-
-      
-
-      <section class="site-overview sidebar-panel sidebar-panel-active">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/images/huojian.jpg"
-               alt="Xu D." />
-          <p class="site-author-name" itemprop="name">Xu D.</p>
-           
-              <p class="site-description motion-element" itemprop="description">Sow nothing, reap nothing.</p>
-          
-        </div>
-        <nav class="site-state motion-element">
-
-          
-            <div class="site-state-item site-state-posts">
-              <a href="/archives/">
-                <span class="site-state-item-count">39</span>
-                <span class="site-state-item-name">日志</span>
-              </a>
-            </div>
-          
-
-          
-            
-            
-            <div class="site-state-item site-state-categories">
-              <a href="/categories/index.html">
-                <span class="site-state-item-count">7</span>
-                <span class="site-state-item-name">分类</span>
-              </a>
-            </div>
-          
-
-          
-            
-            
-            <div class="site-state-item site-state-tags">
-              <a href="/tags/index.html">
-                <span class="site-state-item-count">13</span>
-                <span class="site-state-item-name">标签</span>
-              </a>
-            </div>
-          
-
-        </nav>
-
-        
-
-        <div class="links-of-author motion-element">
-          
-        </div>
-
-        
-        
-
-        
-        
-          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
-            <div class="links-of-blogroll-title">
-              <i class="fa  fa-fw fa-globe"></i>
-              Links
-            </div>
-            <ul class="links-of-blogroll-list">
-              
-                <li class="links-of-blogroll-item">
-                  <a href="https://hexo.io/zh-cn/docs/" title="Hexo官方" target="_blank">Hexo官方</a>
-                </li>
-              
-                <li class="links-of-blogroll-item">
-                  <a href="http://www.jianshu.com/p/5973c05d7100" title="Hexo分享" target="_blank">Hexo分享</a>
-                </li>
-              
-                <li class="links-of-blogroll-item">
-                  <a href="http://theme-next.iissnan.com/theme-settings.html#author-sites" title="NexT主题" target="_blank">NexT主题</a>
-                </li>
-              
-            </ul>
-          </div>
-        
-
-        
-
-
-      </section>
-
-      
-
-      
-
-    </div>
-  </aside>
-
-
-        
       </div>
-    </main>
-
-    <footer id="footer" class="footer">
-      <div class="footer-inner">
-        <div class="copyright" >
-  
-  &copy;  2015 - 
-  <span itemprop="copyrightYear">2020</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Xu D.</span>
-</div>
-
-
-<div class="powered-by">
-  由 <a class="theme-link" href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 强力驱动
-</div>
-
-<div class="theme-info">
-  主题 -
-  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next" target="_blank" rel="noopener">
-    NexT.Muse
-  </a>
-</div>
-
-
-        
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-  
-    <span class="site-uv">
-      <i class="fa fa-user"></i> 访问
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-      
-    </span>
-  
-
-  
-    <span class="site-pv">
-      <i class="fa fa-eye"></i> 总访问量
-      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
-      次
-    </span>
-  
-</div>
-
-
-        
-      </div>
-    </footer>
-
+    </div>
     
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-        
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;ディレクトリ</p>
+  <div id="tocbot"></div>
+</div>
+
       </div>
     
-
   </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
 
   
-
-<script type="text/javascript">
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
-  }
-</script>
-
-
-
-
-
-
-
-
-
-  
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-
-  
-  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
-
-  
-  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
-
-
-
-  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
   
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
-
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
-
-
-
-  
-
-
-  
-
-
-
-
-	
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-  
-    <script type="text/javascript">
-      (function(d, s) {
-        var j, e = d.getElementsByTagName(s)[0];
-        if (typeof LivereTower === 'function') { return; }
-        j = d.createElement(s);
-        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
-        j.async = true;
-        e.parentNode.insertBefore(j, e);
-      })(document, 'script');
-    </script>
-  
-
-
-
-
-
-
-  
-
-
-
-
-
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">検索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">キーワード</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
   
 
   
 
   
 
-  
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
 
   
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
 
-  
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Etcd集群配置&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </body>
 </html>
