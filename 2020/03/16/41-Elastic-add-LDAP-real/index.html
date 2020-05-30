@@ -17,7 +17,7 @@
   <meta name="description" content="Sow nothing, reap nothing.">
   <meta name="author" content="Xu D.">
   <meta name="keywords" content="undefined">
-  <title>企业数据安全性思考及实施 - 律己宽人</title>
+  <title>ElasticSearch结合LDAP实现权限、用户管控 - 律己宽人</title>
 
   <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
 <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
@@ -141,8 +141,8 @@
               
                 <div class="mt-3 post-meta">
                   <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-                  <time datetime="2020-05-30 18:51">
-                    2020年5月30日 晚上
+                  <time datetime="2020-03-16 19:39">
+                    2020年3月16日 晚上
                   </time>
                 </div>
               
@@ -152,7 +152,7 @@
                   
                   <span class="post-meta mr-2">
                     <i class="iconfont icon-chart"></i>
-                    783 字
+                    697 字
                   </span>
                 
 
@@ -162,7 +162,7 @@
                       <i class="iconfont icon-clock-fill"></i>
                     
                     
-                    8
+                    9
                      分钟
                   </span>
                 
@@ -192,74 +192,96 @@
             
             <article class="markdown-body">
               <div class="note note-info">
-            <p>集群权限宽松，未依据业务方区分角色，且内外网未隔离<br>调用及访问方式不严格，任意人员都可获取，系统、数据安全受到较大威胁</p>
+            <p>项目背景<br>使用ElasticSearch实现公司LDAP登录认证，设置ROLE规则，实现权限、用户管控<br>需要使用到Xpack插件<br>注意没有采用SSL和TLS</p>
           </div>
 
 <a id="more"></a>
 
-<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>安全</code>：是一个整体的体系，环环相扣<br>涉及到<code>访问控制</code>，<code>身份认证</code>，<code>数据加密&amp;脱敏</code>，<code>容灾恢复&amp;备份</code>，<code>安全审计</code></p>
-<p>目前的情况并未对外，没有涉及到暴露的情况，逐步发展，一步步完善<br>先简单实现需求，逐步成体系</p>
-<hr>
-<p><strong>从系统和服务使用两个方面进行约束</strong>:</p>
-<p>系统层：</p>
-<blockquote>
-<p>登录无权限限制，带来的问题是无法管控用户登陆后的操作，比如rm /* -rf 等无意、恶意的破坏行为，带来系统乃至集群的稳定风险<br>集群账号，多人共享一个账户，资源滥用，以及可能因为误操作hdfs dfs -rm /xxxx/xxxx，造成数据层面的丢失、损坏</p>
-</blockquote>
-<p>服务层：</p>
-<blockquote>
-<p>知道api接口，即可随意调用资源，篡改数据<br>web页面，知道URL地址，任意人员即可访问</p>
-</blockquote>
-<h2 id="策略"><a href="#策略" class="headerlink" title="策略"></a>策略</h2><h3 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h3><table>
-<thead>
-<tr>
-<th></th>
-<th>问题</th>
-<th>结果</th>
-<th>实现方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>系统登陆管理和授权第一阶段</td>
-<td>登陆无限制，无操作审计<br>业务角色不明，登陆权限过大<br>误操作，导致删除、修改文件，破坏系统</td>
-<td>记录所有用户的登录和操作日志<br>权限明确划分<br>避免高危指令带来风险<br>防范非正常途径登陆服务器</td>
-<td>堡垒机<br>按照业务，区分角色、赋权<br>命令过滤<br>root用户禁止直接登陆</td>
-</tr>
-<tr>
-<td></td>
-<td>hadoop集群账号共享严重<br>数据有泄漏风险<br>历史遗留账号耗费资源<br>账号无记录，申请随意</td>
-<td>不因账号泄漏，造成数据被非法下载<br>通过授权后才可使用调用资源<br>相关用户引导到AGG平台<br>    核心账号调用，需多方确认，禁止个人使用</td>
-<td>清理过期、离职账号<br>增加密码策略定期更新<br>授权申请有记录<br>服务器访问权限，需提工单审批</td>
-</tr>
-<tr>
-<td>大数据服务收敛和api安全第二阶段</td>
-<td>Http APi接口，无权限认证<br>WebUI 界面，无权限认证<br>hbase、yarn接口，无权限认证</td>
-<td>对外用户服务和入口收敛<br>启动账号认证机制<br>避免暴露非必要端口服务</td>
-<td>服务器IP端口，收敛<br>节点服务应该只准许与Master，CM和Gateway节点通信，禁止对集群外服务器暴露服务端口</td>
-</tr>
-</tbody></table>
-<h3 id="角色说明"><a href="#角色说明" class="headerlink" title="角色说明"></a>角色说明</h3><table>
-<thead>
-<tr>
-<th>角色</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>运维</td>
-<td>仅限大数据系统维护组人员</td>
-</tr>
-<tr>
-<td>研发</td>
-<td>仅限大数据基础平台开发人员</td>
-</tr>
-<tr>
-<td>运营、分析</td>
-<td>主要各业务方，数据分析人员</td>
-</tr>
-</tbody></table>
-<h3 id="角色-amp-权限"><a href="#角色-amp-权限" class="headerlink" title="角色&amp;权限"></a>角色&amp;权限</h3><p><img src="privilege.png" srcset="/img/loading.gif" alt="权限划分"></p>
-<h2 id="需要完善的地方"><a href="#需要完善的地方" class="headerlink" title="需要完善的地方"></a>需要完善的地方</h2><p><strong>物理隔离</strong>，涉及到数据的主机，锁闭机体，禁用USB接口<br><strong>网络控制</strong>，主要通过 ACL来实现，对源地址、目的地址、源端口、目的端口和协议的访问进行控制，使用白名单。</p>
 
+
+
+<h2 id="ElasticSearch配置"><a href="#ElasticSearch配置" class="headerlink" title="ElasticSearch配置"></a>ElasticSearch配置</h2><p><code>/data1/elastic/config/elasticsearch.yml</code>增加配置：</p>
+<pre><code class="hljs yaml"><span class="hljs-attr">xpack.security.enabled:</span> <span class="hljs-literal">true</span>
+<span class="hljs-attr">xpack:</span>
+  <span class="hljs-attr">security:</span>
+    <span class="hljs-attr">authc:</span>
+      <span class="hljs-attr">realms:</span>
+        <span class="hljs-attr">native:</span> <span class="hljs-comment"># 需要设置多个realms，同时使用es内置本地认证和ladp认证</span>
+          <span class="hljs-attr">local:</span> <span class="hljs-comment"># real的名字，任意取一个</span>
+            <span class="hljs-attr">order:</span> <span class="hljs-number">0</span>
+        <span class="hljs-attr">ldap:</span>
+          <span class="hljs-attr">ldap1:</span>
+            <span class="hljs-attr">order:</span> <span class="hljs-number">1</span>
+            <span class="hljs-attr">url:</span> <span class="hljs-string">"ldap://ldap.xxxyun.org:389"</span>
+<span class="hljs-comment">#            bind_dn: "cn=admin,dc=xxxyun,dc=org"  #因为是只读的，所以这个可以不用配置ladp管理员账号</span>
+            <span class="hljs-attr">user_search:</span>
+              <span class="hljs-attr">base_dn:</span> <span class="hljs-string">"ou=people,dc=xxxyun,dc=org"</span>
+              <span class="hljs-attr">filter:</span> <span class="hljs-string">"(cn=&#123;0&#125;)"</span>
+<span class="hljs-comment">#              attribute: cn   #配置这个会报与filter无法合并配置的错误</span>
+            <span class="hljs-attr">group_search:</span>
+              <span class="hljs-attr">base_dn:</span> <span class="hljs-string">"ou=people,dc=xxxyun,dc=org"</span>
+            <span class="hljs-attr">files:</span>
+              <span class="hljs-attr">role_mapping:</span> <span class="hljs-string">"/data1/elastic/config/role_mapping.yml"</span>
+            <span class="hljs-attr">unmapped_groups_as_roles:</span> <span class="hljs-literal">false</span>
+<span class="hljs-comment">#           ssl.verification_mode: certificate   #会报错，invalid credentials</span></code></pre>
+<blockquote>
+<p><code>/data1/elastic/config/role_mapping.yml</code> 可配置也可不配置，可以在kibana页面进行角色关系映射</p>
+</blockquote>
+<p><strong>重启ElasticSearch服务</strong></p>
+<h3 id="LDAP"><a href="#LDAP" class="headerlink" title="LDAP"></a>LDAP</h3><p>简单说明一下：LDAP是树形结构<br><code>base_dn: &quot;ou=people,dc=xxxyun,dc=org</code>，通过这个可以获取到所有的用户目录<br>也不需要设置<code>bind_dn</code>，因为可以匿名访问<br><code>cn=everybody,ou=people,dc=xxxyun,dc=org</code>，就是一个dn（Distinguish Name），是一个唯一ID，能看出来这个是一个目录树的路径，所以能唯一标识entry信息（类似数据库里的一条）</p>
+<p><img src="1.png" srcset="/img/loading.gif" alt="cbf5ebb8a0bd4076b2537932dc863444.png"></p>
+<h3 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h3><pre><code class="hljs bash">[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># curl -u everybody:xxxx  http://192.168.16.5:9200/_xpack/security/_authenticate?pretty            </span>
+<span class="hljs-comment"># 返回</span>
+&#123;
+  <span class="hljs-string">"username"</span> : <span class="hljs-string">"everybody"</span>,
+  <span class="hljs-string">"roles"</span> : [   <span class="hljs-comment"># 默认情况下，这里的role会是空的</span>
+    <span class="hljs-string">"Reader"</span>,
+    <span class="hljs-string">"admin"</span>,
+    <span class="hljs-string">"superuser"</span>
+  ],
+  <span class="hljs-string">"full_name"</span> : null,
+  <span class="hljs-string">"email"</span> : null,
+  <span class="hljs-string">"metadata"</span> : &#123;
+    <span class="hljs-string">"ldap_dn"</span> : <span class="hljs-string">"cn=everybody,ou=people,dc=xxxyun,dc=org"</span>,  <span class="hljs-comment"># everybody账户的dn</span>
+    <span class="hljs-string">"ldap_groups"</span> : [ ]
+  &#125;,
+  <span class="hljs-string">"enabled"</span> : <span class="hljs-literal">true</span>,
+  <span class="hljs-string">"authentication_realm"</span> : &#123;
+    <span class="hljs-string">"name"</span> : <span class="hljs-string">"ldap1"</span>, <span class="hljs-comment"># 能看到使用ldap方式获取的用户</span>
+    <span class="hljs-string">"type"</span> : <span class="hljs-string">"ldap"</span>    <span class="hljs-comment"># 是ldap的类型</span>
+  &#125;,
+  <span class="hljs-string">"lookup_realm"</span> : &#123;
+    <span class="hljs-string">"name"</span> : <span class="hljs-string">"ldap1"</span>,
+    <span class="hljs-string">"type"</span> : <span class="hljs-string">"ldap"</span>
+  &#125;
+&#125;</code></pre>
+
+<h2 id="kibana设置权限及角色映射"><a href="#kibana设置权限及角色映射" class="headerlink" title="kibana设置权限及角色映射"></a>kibana设置权限及角色映射</h2><h3 id="创建一个只读的Role"><a href="#创建一个只读的Role" class="headerlink" title="创建一个只读的Role"></a>创建一个只读的Role</h3><p><img src="2.png" srcset="/img/loading.gif" alt="08769823925c9a7bb80423f271bc0c76.png"></p>
+<h3 id="创建一个admin的Role"><a href="#创建一个admin的Role" class="headerlink" title="创建一个admin的Role"></a>创建一个admin的Role</h3><p><img src="3.png" srcset="/img/loading.gif" alt="96344246eaa706990d9b68355c2dd77c.png"></p>
+<h3 id="设置LDAP用户与Role的映射关系（只读用户）"><a href="#设置LDAP用户与Role的映射关系（只读用户）" class="headerlink" title="设置LDAP用户与Role的映射关系（只读用户）"></a>设置LDAP用户与Role的映射关系（只读用户）</h3><p>注意这两个参数，<code>cn=*</code>代表默认情况下所有用户都是只读的权限<br><img src="4.png" srcset="/img/loading.gif" alt="95afdba142db6700e5dd432b932408f1.png"></p>
+<h3 id="设置LDAP指定用户添加superuser权限"><a href="#设置LDAP指定用户添加superuser权限" class="headerlink" title="设置LDAP指定用户添加superuser权限"></a>设置LDAP指定用户添加superuser权限</h3><p><img src="5.png" srcset="/img/loading.gif" alt="a0ba8406c372a3ded2f52a1dfa994ee2.png"></p>
+<h3 id="使用Reader用户登录验证权限"><a href="#使用Reader用户登录验证权限" class="headerlink" title="使用Reader用户登录验证权限"></a>使用Reader用户登录验证权限</h3><p><img src="6.png" srcset="/img/loading.gif" alt="7de263074a464c5ae2d32658ee8101ad.png"></p>
+<h2 id="遇到的问题"><a href="#遇到的问题" class="headerlink" title="遇到的问题"></a>遇到的问题</h2><ol>
+<li>配置了LDAP以后，ES本地的用户无法认证</li>
+</ol>
+<blockquote>
+<p>官方说法：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/native-realm.html" target="_blank" rel="noopener">本地用户认证</a><br>The native realm is available by default when no other realms are configured. If other realm settings have been configured in elasticsearch.yml, you must add the native realm to the realm chain.<br>“当未配置其他领域时，默认情况下本机领域可用。<br>如果在<code>elasticsearch.yml</code>中配置了其他领域设置，则必须将本机领域添加到领域链”<br>需要添加配置</p>
+</blockquote>
+<pre><code class="hljs plain">xpack:
+  security:
+    authc:
+      realms:
+        native:
+          local:
+            order: 0</code></pre>
+
+<ol start="2">
+<li>日志有警告</li>
+</ol>
+<blockquote>
+<p>[2020-04-27T14:59:46,304][WARN ][o.e.x.s.a.AuthenticationService] [node_16_5] Authentication to realm ldap1 failed - authenticate failed (Caused by LDAPException(resultCode=49 (invalid credentials), errorMessage=’invalid credentials’, ldapSDKVersion=4.0.8, revision=28812))<br>修改<code>elasticsearch.yml</code>配置</p>
+</blockquote>
+<pre><code class="hljs plain">去掉参数：ssl.verification_mode: certificate</code></pre>
             </article>
             <hr>
             <div>
@@ -268,7 +290,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/linux/">linux</a>
+                      <a class="hover-with-bg" href="/categories/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a>
                     
                   </div>
                 
@@ -276,7 +298,7 @@
                   <div class="post-meta">
                     <i class="iconfont icon-tags"></i>
                     
-                      <a class="hover-with-bg" href="/tags/system/">system</a>
+                      <a class="hover-with-bg" href="/tags/ELK/">ELK</a>
                     
                   </div>
                 
@@ -289,12 +311,18 @@
                   <div class="post-prev col-6">
                     
                     
+                      <a href="/2020/05/30/39-%E5%A4%A7%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7%E6%80%9D%E8%80%83/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">企业数据安全性思考及实施</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
                   </div>
                   <div class="post-next col-6">
                     
                     
-                      <a href="/2020/03/16/41-Elastic-add-LDAP-real/">
-                        <span class="hidden-mobile">ElasticSearch结合LDAP实现权限、用户管控</span>
+                      <a href="/2020/03/01/40-use-alternatives-java/">
+                        <span class="hidden-mobile">使用alternatives管理java环境</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -444,7 +472,7 @@
     var typed = new Typed('#subtitle', {
       strings: [
         '  ',
-        "企业数据安全性思考及实施&nbsp;",
+        "ElasticSearch结合LDAP实现权限、用户管控&nbsp;",
       ],
       cursorChar: "_",
       typeSpeed: 70,

@@ -17,7 +17,7 @@
   <meta name="description" content="Sow nothing, reap nothing.">
   <meta name="author" content="Xu D.">
   <meta name="keywords" content="undefined">
-  <title>标签 - ELk - 律己宽人</title>
+  <title>标签 - ELK - 律己宽人</title>
 
   <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
 <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
@@ -158,16 +158,37 @@
                 
 
 <div class="list-group">
-<!--  <p class="h4">共计 1 篇文章</p>-->
+<!--  <p class="h4">共计 4 篇文章</p>-->
   <hr>
   
     
       
       <p class="h5">2020</p>
     
-    <a href="/2020/02/13/38-es%E5%88%86%E7%89%87%E8%BF%81%E7%A7%BB/" class="list-group-item list-group-item-action">
-      <span class="archive-post-title">es分片迁移，设置磁盘分配策略</span>
-      <span style="float: right;">02-13</span>
+    <a href="/2020/03/16/41-Elastic-add-LDAP-real/" class="list-group-item list-group-item-action">
+      <span class="archive-post-title">ElasticSearch结合LDAP实现权限、用户管控</span>
+      <span style="float: right;">03-16</span>
+    </a>
+  
+    
+      
+      <p class="h5">2018</p>
+    
+    <a href="/2018/04/05/31-elk03/" class="list-group-item list-group-item-action">
+      <span class="archive-post-title">ELK系列03-kibana视图化简单尝试</span>
+      <span style="float: right;">04-05</span>
+    </a>
+  
+    
+    <a href="/2018/04/05/30-mongodbSlowLog/" class="list-group-item list-group-item-action">
+      <span class="archive-post-title">ELK系列02-ELK分析MongoDB日志</span>
+      <span style="float: right;">04-05</span>
+    </a>
+  
+    
+    <a href="/2018/04/04/28-elk01/" class="list-group-item list-group-item-action">
+      <span class="archive-post-title">ELK系列01-ElasticSearch单机2节点安装测试</span>
+      <span style="float: right;">04-04</span>
     </a>
   
 </div>
@@ -271,7 +292,7 @@
     var typed = new Typed('#subtitle', {
       strings: [
         '  ',
-        "标签 - ELk&nbsp;",
+        "标签 - ELK&nbsp;",
       ],
       cursorChar: "_",
       typeSpeed: 70,
@@ -352,20 +373,6 @@
                 mnum = "0" + mnum;
       }
       seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
-      snum = Math.round(seconds);
-      if(String(snum).length ==1 ){
-                snum = "0" + snum;
-      }
-      document.getElementById("timeDate").innerHTML = "本站安全运行&nbsp"+dnum+"&nbsp天";
-      document.getElementById("times").innerHTML = hnum + "&nbsp小时&nbsp" + mnum + "&nbsp分&nbsp" + snum + "&nbsp秒";
-  }
-  setInterval("createtime()",250);
-  </script>
-</div>
-
-</body>
-</html>
-dnum) - (60 * 60 * hnum) - (60 * mnum);
       snum = Math.round(seconds);
       if(String(snum).length ==1 ){
                 snum = "0" + snum;

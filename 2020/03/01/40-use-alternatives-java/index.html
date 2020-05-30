@@ -17,7 +17,7 @@
   <meta name="description" content="Sow nothing, reap nothing.">
   <meta name="author" content="Xu D.">
   <meta name="keywords" content="undefined">
-  <title>企业数据安全性思考及实施 - 律己宽人</title>
+  <title>使用alternatives管理java环境 - 律己宽人</title>
 
   <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
 <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
@@ -141,8 +141,8 @@
               
                 <div class="mt-3 post-meta">
                   <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-                  <time datetime="2020-05-30 18:51">
-                    2020年5月30日 晚上
+                  <time datetime="2020-03-01 19:36">
+                    2020年3月1日 晚上
                   </time>
                 </div>
               
@@ -152,7 +152,7 @@
                   
                   <span class="post-meta mr-2">
                     <i class="iconfont icon-chart"></i>
-                    783 字
+                    604 字
                   </span>
                 
 
@@ -162,7 +162,7 @@
                       <i class="iconfont icon-clock-fill"></i>
                     
                     
-                    8
+                    10
                      分钟
                   </span>
                 
@@ -192,73 +192,81 @@
             
             <article class="markdown-body">
               <div class="note note-info">
-            <p>集群权限宽松，未依据业务方区分角色，且内外网未隔离<br>调用及访问方式不严格，任意人员都可获取，系统、数据安全受到较大威胁</p>
+            <p>Linux自带的java环境都比较老，目前的ES，tarBall都含有最新的JDK，不需要去JAVA官网下载新的，直接使用自带的神器alternatives安装即可管理使用</p>
           </div>
 
 <a id="more"></a>
 
-<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>安全</code>：是一个整体的体系，环环相扣<br>涉及到<code>访问控制</code>，<code>身份认证</code>，<code>数据加密&amp;脱敏</code>，<code>容灾恢复&amp;备份</code>，<code>安全审计</code></p>
-<p>目前的情况并未对外，没有涉及到暴露的情况，逐步发展，一步步完善<br>先简单实现需求，逐步成体系</p>
-<hr>
-<p><strong>从系统和服务使用两个方面进行约束</strong>:</p>
-<p>系统层：</p>
+<h3 id="下载安装包"><a href="#下载安装包" class="headerlink" title="下载安装包"></a>下载安装包</h3><p>通过官网下载</p>
+<pre><code class="hljs Bash">[root@<span class="hljs-built_in">log</span> elasticsearch-7.6.1]<span class="hljs-comment"># cd /opt/elastic</span>
+[root@<span class="hljs-built_in">log</span> elasticsearch-7.6.1]<span class="hljs-comment"># wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.6.2-linux-x86_64.tar.gz</span></code></pre>
+
+<p>解压以后能看到有jdk包</p>
+<pre><code class="hljs bash">[root@<span class="hljs-built_in">log</span> elasticsearch-7.6.1]<span class="hljs-comment"># tar elasticsearch-7.6.2-linux-x86_64.tar.gz</span>
+[root@<span class="hljs-built_in">log</span> elasticsearch-7.6.1]<span class="hljs-comment"># ll</span>
+total 564
+drwxr-xr-x  2 elasticsearch elasticsearch   4096 Feb 29 08:18 bin
+drwxr-xr-x  2 elasticsearch elasticsearch    178 Apr 27 10:21 config
+drwxr-xr-x  3 elasticsearch elasticsearch     19 Mar 27 14:38 data
+drwxr-xr-x  9 elasticsearch elasticsearch    107 Feb 29 08:18 jdk
+drwxr-xr-x  3 elasticsearch elasticsearch   4096 Feb 29 08:18 lib
+-rw-r--r--  1 elasticsearch elasticsearch  13675 Feb 29 08:13 LICENSE.txt
+drwxr-xr-x  2 elasticsearch elasticsearch   4096 May 12 11:04 logs
+drwxr-xr-x 38 elasticsearch elasticsearch   4096 Feb 29 08:18 modules
+-rw-r--r--  1 elasticsearch elasticsearch 523209 Feb 29 08:18 NOTICE.txt
+-rw-r--r--  1 elasticsearch elasticsearch      5 May 12 11:05 pid
+drwxr-xr-x  2 elasticsearch elasticsearch      6 Feb 29 08:18 plugins
+-rw-r--r--  1 elasticsearch elasticsearch   8164 Feb 29 08:13 README.asciidoc</code></pre>
+
+<h3 id="alternatives管理java"><a href="#alternatives管理java" class="headerlink" title="alternatives管理java"></a>alternatives管理java</h3><ol>
+<li><p>目前只有1个java环境</p>
+<pre><code class="hljs bash">[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># alternatives --config java</span>
+
+There are 1 programs <span class="hljs-built_in">which</span> provide <span class="hljs-string">'java'</span>.
+
+  Selection    Command
+-----------------------------------------------
+*+ 1           java-1.8.0-openjdk.x86_64 (/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.el7_6.x86_64/jre/bin/java)</code></pre>
+</li>
+<li><p>添加es的jdk环境</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># 添加java 和 javac</span>
+[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># alternatives --install /usr/bin/java java /opt/elasticsearch/elasticsearch-7.6.1/jdk/bin/java 100</span>
+[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># alternatives --install /usr/bin/javac javac /opt/elasticsearch/elasticsearch-7.6.1/jdk/bin/javac 100</span></code></pre>
 <blockquote>
-<p>登录无权限限制，带来的问题是无法管控用户登陆后的操作，比如rm /* -rf 等无意、恶意的破坏行为，带来系统乃至集群的稳定风险<br>集群账号，多人共享一个账户，资源滥用，以及可能因为误操作hdfs dfs -rm /xxxx/xxxx，造成数据层面的丢失、损坏</p>
+<p>参数说明：<br><code>/usr/bin/java</code> 为<code>ln -s</code>的目标路径<br><code>java</code> 为<code>config</code>名<br><code>/opt/elasticsearch/elasticsearch-7.6.1/jdk/bin/java</code>为java所在的目录<br><code>100</code>为优先级</p>
 </blockquote>
-<p>服务层：</p>
-<blockquote>
-<p>知道api接口，即可随意调用资源，篡改数据<br>web页面，知道URL地址，任意人员即可访问</p>
-</blockquote>
-<h2 id="策略"><a href="#策略" class="headerlink" title="策略"></a>策略</h2><h3 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h3><table>
-<thead>
-<tr>
-<th></th>
-<th>问题</th>
-<th>结果</th>
-<th>实现方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>系统登陆管理和授权第一阶段</td>
-<td>登陆无限制，无操作审计<br>业务角色不明，登陆权限过大<br>误操作，导致删除、修改文件，破坏系统</td>
-<td>记录所有用户的登录和操作日志<br>权限明确划分<br>避免高危指令带来风险<br>防范非正常途径登陆服务器</td>
-<td>堡垒机<br>按照业务，区分角色、赋权<br>命令过滤<br>root用户禁止直接登陆</td>
-</tr>
-<tr>
-<td></td>
-<td>hadoop集群账号共享严重<br>数据有泄漏风险<br>历史遗留账号耗费资源<br>账号无记录，申请随意</td>
-<td>不因账号泄漏，造成数据被非法下载<br>通过授权后才可使用调用资源<br>相关用户引导到AGG平台<br>    核心账号调用，需多方确认，禁止个人使用</td>
-<td>清理过期、离职账号<br>增加密码策略定期更新<br>授权申请有记录<br>服务器访问权限，需提工单审批</td>
-</tr>
-<tr>
-<td>大数据服务收敛和api安全第二阶段</td>
-<td>Http APi接口，无权限认证<br>WebUI 界面，无权限认证<br>hbase、yarn接口，无权限认证</td>
-<td>对外用户服务和入口收敛<br>启动账号认证机制<br>避免暴露非必要端口服务</td>
-<td>服务器IP端口，收敛<br>节点服务应该只准许与Master，CM和Gateway节点通信，禁止对集群外服务器暴露服务端口</td>
-</tr>
-</tbody></table>
-<h3 id="角色说明"><a href="#角色说明" class="headerlink" title="角色说明"></a>角色说明</h3><table>
-<thead>
-<tr>
-<th>角色</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>运维</td>
-<td>仅限大数据系统维护组人员</td>
-</tr>
-<tr>
-<td>研发</td>
-<td>仅限大数据基础平台开发人员</td>
-</tr>
-<tr>
-<td>运营、分析</td>
-<td>主要各业务方，数据分析人员</td>
-</tr>
-</tbody></table>
-<h3 id="角色-amp-权限"><a href="#角色-amp-权限" class="headerlink" title="角色&amp;权限"></a>角色&amp;权限</h3><p><img src="privilege.png" srcset="/img/loading.gif" alt="权限划分"></p>
-<h2 id="需要完善的地方"><a href="#需要完善的地方" class="headerlink" title="需要完善的地方"></a>需要完善的地方</h2><p><strong>物理隔离</strong>，涉及到数据的主机，锁闭机体，禁用USB接口<br><strong>网络控制</strong>，主要通过 ACL来实现，对源地址、目的地址、源端口、目的端口和协议的访问进行控制，使用白名单。</p>
+</li>
+<li><p>选择默认的Java版本</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># 选择相应的数字，选中的环境前面会有个+号</span>
+[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># alternatives --config java</span>
+
+There are 2 programs <span class="hljs-built_in">which</span> provide <span class="hljs-string">'java'</span>.
+
+  Selection    Command
+-----------------------------------------------
+*  1           java-1.8.0-openjdk.x86_64 (/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.el7_6.x86_64/jre/bin/java)
+ + 2           /opt/elasticsearch/elasticsearch-7.6.1/jdk/bin/java
+
+Enter to keep the current selection[+], or <span class="hljs-built_in">type</span> selection number: 2
+
+<span class="hljs-comment"># javac也进行同样的操作</span>
+[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># alternatives --config javac</span>
+
+There are 2 programs <span class="hljs-built_in">which</span> provide <span class="hljs-string">'javac'</span>.
+
+  Selection    Command
+-----------------------------------------------
+*  1           java-1.8.0-openjdk.x86_64 (/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.el7_6.x86_64/bin/javac)
+ + 2           /opt/elasticsearch/elasticsearch-7.6.1/jdk/bin/javac
+
+Enter to keep the current selection[+], or <span class="hljs-built_in">type</span> selection number: 2</code></pre>
+</li>
+<li><p>验证是否正确</p>
+<pre><code class="hljs bash">[root@<span class="hljs-built_in">log</span> ~]<span class="hljs-comment"># java -version</span>
+openjdk version <span class="hljs-string">"13.0.2"</span> 2020-01-14
+OpenJDK Runtime Environment AdoptOpenJDK (build 13.0.2+8)
+OpenJDK 64-Bit Server VM AdoptOpenJDK (build 13.0.2+8, mixed mode, sharing)</code></pre></li>
+</ol>
 
             </article>
             <hr>
@@ -268,7 +276,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/linux/">linux</a>
+                      <a class="hover-with-bg" href="/categories/system/">system</a>
                     
                   </div>
                 
@@ -276,7 +284,7 @@
                   <div class="post-meta">
                     <i class="iconfont icon-tags"></i>
                     
-                      <a class="hover-with-bg" href="/tags/system/">system</a>
+                      <a class="hover-with-bg" href="/tags/linux/">linux</a>
                     
                   </div>
                 
@@ -289,12 +297,18 @@
                   <div class="post-prev col-6">
                     
                     
+                      <a href="/2020/03/16/41-Elastic-add-LDAP-real/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ElasticSearch结合LDAP实现权限、用户管控</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
                   </div>
                   <div class="post-next col-6">
                     
                     
-                      <a href="/2020/03/16/41-Elastic-add-LDAP-real/">
-                        <span class="hidden-mobile">ElasticSearch结合LDAP实现权限、用户管控</span>
+                      <a href="/2020/02/13/38-es%E5%88%86%E7%89%87%E8%BF%81%E7%A7%BB/">
+                        <span class="hidden-mobile">es分片迁移，设置磁盘分配策略</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -444,7 +458,7 @@
     var typed = new Typed('#subtitle', {
       strings: [
         '  ',
-        "企业数据安全性思考及实施&nbsp;",
+        "使用alternatives管理java环境&nbsp;",
       ],
       cursorChar: "_",
       typeSpeed: 70,
