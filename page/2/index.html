@@ -166,6 +166,48 @@
     
     
     <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2018/04/04/29-nf-conntrack/">记一次服务器nf_conntrack:table_full</a>
+
+      <a href="/2018/04/04/29-nf-conntrack/" class="index-excerpt">
+        
+        
+          
+        
+        <div>
+            nf_conntrack模块用于跟踪连接的状态，供其他模块使用(调用信息)最常见的使用场景是iptables 的 nat 和 state 模块nf_conntrack用1个HASH表记录已建立的连接，包括其他机器到本机、本机到其他机器、本机到本机如果连接进来比释放的快，把哈希表塞满了，此时netfilter变成了一个黑洞，导致丢弃任何数据包。
+          </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2018-04-04
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/linux/">linux</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/system/">system</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
       <a class="index-header" href="/2018/04/04/28-elk01/">ELK系列01-ElasticSearch单机2节点安装测试</a>
 
       <a href="/2018/04/04/28-elk01/" class="index-excerpt">
@@ -504,48 +546,6 @@
             <i class="iconfont icon-tags"></i>
             
               <a href="/tags/etcd/">etcd</a>
-            
-          </div>
-        
-      </div>
-    </div>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <div class="col-12 col-md-12 mx-auto index-info">
-      <a class="index-header" href="/2018/01/26/19-MongoDB-cluster/">MongoDB集群配置</a>
-
-      <a href="/2018/01/26/19-MongoDB-cluster/" class="index-excerpt">
-        
-        
-          
-        
-        <div>
-            从图中可以看到有四个组件：mongos、config server、shard、replica set。
-          </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>&nbsp;2018-01-26
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/db/">db</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/mongodb/">mongodb</a>
             
           </div>
         
