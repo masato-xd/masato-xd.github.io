@@ -323,7 +323,10 @@ sysctl -p</code></pre>
 <pre><code class="hljs bash">chmod +x ./cloudera-manager-installer.bin</code></pre>
 
 <p>开始安装CM</p>
-<pre><code class="hljs bash">./cloudera-manager-installer.bin</code></pre>
+<blockquote>
+<p>参数使其不在/etc/yum.repo.d/下生成cloudera-manager.repo文件</p>
+</blockquote>
+<pre><code class="hljs bash">./cloudera-manager-installer.bin --skip_repo_package=1</code></pre>
 
 <p>安装过程按照提示一步一步往下等待安装即可。</p>
 <p>最后出现下图，确定后安装结束，再进入CM管理页面进行后续安装。根据图中提示可知地址为<a href="http://IP:7180，其中IP为`CM节点`IP，初始用户名和密码均为admin。">http://IP:7180，其中IP为`CM节点`IP，初始用户名和密码均为admin。</a></p>
