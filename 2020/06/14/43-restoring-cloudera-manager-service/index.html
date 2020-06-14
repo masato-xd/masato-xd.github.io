@@ -17,7 +17,7 @@
   <meta name="description" content="Sow nothing, reap nothing.">
   <meta name="author" content="Xu D.">
   <meta name="keywords" content="undefined">
-  <title>企业数据安全性思考及实施 - 律己宽人</title>
+  <title>CMS服务备份与恢复 - 律己宽人</title>
 
   <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
 <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
@@ -141,8 +141,8 @@
               
                 <div class="mt-3 post-meta">
                   <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-                  <time datetime="2020-05-30 18:51">
-                    2020年5月30日 晚上
+                  <time datetime="2020-06-14 21:51">
+                    2020年6月14日 晚上
                   </time>
                 </div>
               
@@ -152,7 +152,7 @@
                   
                   <span class="post-meta mr-2">
                     <i class="iconfont icon-chart"></i>
-                    783 字
+                    811 字
                   </span>
                 
 
@@ -162,7 +162,7 @@
                       <i class="iconfont icon-clock-fill"></i>
                     
                     
-                    8
+                    12
                      分钟
                   </span>
                 
@@ -192,73 +192,112 @@
             
             <article class="markdown-body">
               <div class="note note-info">
-            <p>集群权限宽松，未依据业务方区分角色，且内外网未隔离<br>调用及访问方式不严格，任意人员都可获取，系统、数据安全受到较大威胁</p>
+            <p>上篇文章中，详细说明了如何去部署CDH<br>实际生产中，CDH的重要服务都可以做HA（如HDFS、YARN）<br>但是CMS却只能单点，若CMS主机损坏或者服务损坏，不可能重新启动再接管集群，需要手动去恢复<br>今天模拟实际故障，演练CMS单点故障的处理方法和恢复。</p>
           </div>
 
 <a id="more"></a>
 
-<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>安全</code>：是一个整体的体系，环环相扣<br>涉及到<code>访问控制</code>，<code>身份认证</code>，<code>数据加密&amp;脱敏</code>，<code>容灾恢复&amp;备份</code>，<code>安全审计</code></p>
-<p>目前的情况并未对外，没有涉及到暴露的情况，逐步发展，一步步完善<br>先简单实现需求，逐步成体系</p>
-<hr>
-<p><strong>从系统和服务使用两个方面进行约束</strong>:</p>
-<p>系统层：</p>
+
+<h2 id="1-备份"><a href="#1-备份" class="headerlink" title="1. 备份"></a>1. 备份</h2><p>这里建议使用完整备份，所以停止集群</p>
+<p>生产环境肯定不能停止，所以只需要备份scm库即可</p>
 <blockquote>
-<p>登录无权限限制，带来的问题是无法管控用户登陆后的操作，比如rm /* -rf 等无意、恶意的破坏行为，带来系统乃至集群的稳定风险<br>集群账号，多人共享一个账户，资源滥用，以及可能因为误操作hdfs dfs -rm /xxxx/xxxx，造成数据层面的丢失、损坏</p>
+<p>使用的是内嵌PG数据库</p>
+<p>scm用户密码在：<code>/etc/cloudera-scm-server/db.properties</code></p>
+<p>cloudera-scm用户密码在： <code>/var/lib/cloudera-scm-server-db/data/generated_password.txt</code></p>
 </blockquote>
-<p>服务层：</p>
+<ol>
+<li><p>web页面，选择集群 &gt; 停止</p>
+</li>
+<li><p>选择cloudera-manager-server &gt; 停止</p>
+</li>
+<li><p>CMS节点上，<code>service cloudera-scm-server stop</code></p>
+</li>
+<li><p><code>service cloudera-scm-agent stop</code></p>
+</li>
+<li><p><code>service cloudera-scm-server-db stop</code></p>
+</li>
+<li><p>打包压缩备份目录，<code>/var/lib/cloudera-scm-server</code></p>
+</li>
+<li><p>备份数据库</p>
+<pre><code class="hljs bash">pg_dump -h 127.0.0.1 -p 7432 -U scm &gt; scm_server_db_backup.$(date +%Y%m%d)
+pg_dump -h 127.0.0.1 -U oozie_oozie_server -W -p 7432 oozie_oozie_server &gt; oozie_oozie_server-backup-`date +%F`-CDH5.7.sql
+pg_dump -h 127.0.0.1 -U hive -W -p 7432 hive &gt;  hive-backup-`date +%F`-CDH5.7.sql</code></pre>
+
+
+
+</li>
+</ol>
+<h2 id="2-部署新的环境"><a href="#2-部署新的环境" class="headerlink" title="2. 部署新的环境"></a>2. 部署新的环境</h2><p>在新的服务器上，只需要安装3个文件（需要提前下载放到一个目录中）</p>
+<pre><code class="hljs bash">yum localinstall cloudera-manager-server-5.7.1-1.cm571.p0.8.el7.x86_64.rpm \
+cloudera-manager-server-db-2-5.7.1-1.cm571.p0.8.el7.x86_64.rpm \
+cloudera-manager-daemons-5.7.1-1.cm571.p0.8.el7.x86_64.rpm</code></pre>
+
+<p>安装<code>cloudera-manager-server-db-2</code>使用内嵌的数据库，也可以选择外置，根据线上环境定夺</p>
+<h2 id="3-恢复"><a href="#3-恢复" class="headerlink" title="3. 恢复"></a>3. 恢复</h2><p>拷贝/var/lib/cloudera-scm-server/到新节点同级目录</p>
+<pre><code class="hljs bash">cp cloudera-scm-server.tar.gz /var/lib/cloudera-scm-server/</code></pre>
+
+<p>赋权</p>
+<pre><code class="hljs bash">chown cloudera-scm.cloudera-scm -R /var/lib/cloudera-scm-server/</code></pre>
+
+<p>启动DB</p>
+<pre><code class="hljs plain">service cloudera-scm-server-db start</code></pre>
+
+<p>验证数据库</p>
+<pre><code class="hljs bash">[root@cms-server ~]<span class="hljs-comment">#  psql -h /run/cloudera-scm-server/ -p 7432  -U cloudera-scm  -d postgres</span>
+psql (9.2.24)
+Type <span class="hljs-string">"help"</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.
+
+postgres=<span class="hljs-comment"># \l</span>
+                                                List of databases
+        Name        |       Owner        | Encoding |  Collate   |   Ctype    |         Access privileges         
+--------------------+--------------------+----------+------------+------------+-----------------------------------
+ amon               | amon               | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ metastore          | hive               | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ nav                | nav                | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ navms              | navms              | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ oozie_oozie_server | oozie_oozie_server | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ postgres           | cloudera-scm       | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ rman               | rman               | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ scm                | scm                | UTF8     | en_US.UTF8 | en_US.UTF8 | 
+ template0          | cloudera-scm       | UTF8     | en_US.UTF8 | en_US.UTF8 | =c/<span class="hljs-string">"cloudera-scm"</span>                +
+                    |                    |          |            |            | <span class="hljs-string">"cloudera-scm"</span>=CTc/<span class="hljs-string">"cloudera-scm"</span>
+ template1          | cloudera-scm       | UTF8     | en_US.UTF8 | en_US.UTF8 | =c/<span class="hljs-string">"cloudera-scm"</span>                +
+                    |                    |          |            |            | <span class="hljs-string">"cloudera-scm"</span>=CTc/<span class="hljs-string">"cloudera-scm"</span>
+(10 rows)
+
+postgres=<span class="hljs-comment">#</span></code></pre>
+
+<p>创建数据库</p>
 <blockquote>
-<p>知道api接口，即可随意调用资源，篡改数据<br>web页面，知道URL地址，任意人员即可访问</p>
+<p>模拟的环境上部署了hive和oozie服务</p>
 </blockquote>
-<h2 id="策略"><a href="#策略" class="headerlink" title="策略"></a>策略</h2><h3 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h3><table>
-<thead>
-<tr>
-<th></th>
-<th>问题</th>
-<th>结果</th>
-<th>实现方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>系统登陆管理和授权第一阶段</td>
-<td>登陆无限制，无操作审计<br>业务角色不明，登陆权限过大<br>误操作，导致删除、修改文件，破坏系统</td>
-<td>记录所有用户的登录和操作日志<br>权限明确划分<br>避免高危指令带来风险<br>防范非正常途径登陆服务器</td>
-<td>堡垒机<br>按照业务，区分角色、赋权<br>命令过滤<br>root用户禁止直接登陆</td>
-</tr>
-<tr>
-<td></td>
-<td>hadoop集群账号共享严重<br>数据有泄漏风险<br>历史遗留账号耗费资源<br>账号无记录，申请随意</td>
-<td>不因账号泄漏，造成数据被非法下载<br>通过授权后才可使用调用资源<br>相关用户引导到AGG平台<br>    核心账号调用，需多方确认，禁止个人使用</td>
-<td>清理过期、离职账号<br>增加密码策略定期更新<br>授权申请有记录<br>服务器访问权限，需提工单审批</td>
-</tr>
-<tr>
-<td>大数据服务收敛和api安全第二阶段</td>
-<td>Http APi接口，无权限认证<br>WebUI 界面，无权限认证<br>hbase、yarn接口，无权限认证</td>
-<td>对外用户服务和入口收敛<br>启动账号认证机制<br>避免暴露非必要端口服务</td>
-<td>服务器IP端口，收敛<br>节点服务应该只准许与Master，CM和Gateway节点通信，禁止对集群外服务器暴露服务端口</td>
-</tr>
-</tbody></table>
-<h3 id="角色说明"><a href="#角色说明" class="headerlink" title="角色说明"></a>角色说明</h3><table>
-<thead>
-<tr>
-<th>角色</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>运维</td>
-<td>仅限大数据系统维护组人员</td>
-</tr>
-<tr>
-<td>研发</td>
-<td>仅限大数据基础平台开发人员</td>
-</tr>
-<tr>
-<td>运营、分析</td>
-<td>主要各业务方，数据分析人员</td>
-</tr>
-</tbody></table>
-<h3 id="角色-amp-权限"><a href="#角色-amp-权限" class="headerlink" title="角色&amp;权限"></a>角色&amp;权限</h3><p><img src="privilege.png" srcset="/img/loading.gif" alt="权限划分"></p>
-<h2 id="需要完善的地方"><a href="#需要完善的地方" class="headerlink" title="需要完善的地方"></a>需要完善的地方</h2><p><strong>物理隔离</strong>，涉及到数据的主机，锁闭机体，禁用USB接口<br><strong>网络控制</strong>，主要通过 ACL来实现，对源地址、目的地址、源端口、目的端口和协议的访问进行控制，使用白名单。</p>
+<pre><code class="hljs plain">CREATE ROLE hive LOGIN PASSWORD &#39;hive&#39;;
+CREATE DATABASE metastore OWNER hive ENCODING &#39;UTF8&#39;;
+CREATE ROLE oozie_oozie_server LOGIN PASSWORD &#39;oozie_oozie_server&#39;;
+CREATE DATABASE oozie_oozie_server OWNER oozie_oozie_server ENCODING &#39;UTF8&#39;;</code></pre>
+
+<p>恢复数据</p>
+<pre><code class="hljs bash">psql -h /run/cloudera-scm-server/ -p 7432 -U cloudera-scm oozie_oozie_server &lt; oozie_oozie_server-backup-2020-06-10-CDH5.7.sql
+psql -h /run/cloudera-scm-server/ -p 7432 -U cloudera-scm metastore &lt; hive-backup-2020-06-10-CDH5.7.sql
+psql -h /run/cloudera-scm-server/ -p 7432 -U cloudera-scm scm &lt;scm_server_db_backup.20200610</code></pre>
+
+<p>修改<code>pg_hba.conf</code>文件</p>
+<blockquote>
+<p>以免访问数据库报错</p>
+</blockquote>
+<pre><code class="hljs bash"><span class="hljs-built_in">echo</span> <span class="hljs-string">"host all all 0.0.0.0/0 md5"</span> &gt;&gt; /var/lib/cloudera-scm-server-db/data/pg_hba.conf 
+<span class="hljs-comment"># 修改后重新加载配置</span>
+sudo -u cloudera-scm pg_ctl reload -D /var/lib/cloudera-scm-server-db/data/</code></pre>
+
+<p>启动cm-server</p>
+<pre><code class="hljs bash">service cloudera-scm-server start</code></pre>
+
+<p>修改所有节点agent配置并启动</p>
+<pre><code class="hljs bash">vim /etc/cloudera-scm-agent/config.ini，<span class="hljs-comment">#配置行：server_host=192.168.63.142</span>
+
+service cloudera-scm-agent start</code></pre>
+
+<p>启动后在管理web页面修改<code>hive</code>,<code>oozie</code>服务数据库配置</p>
 
             </article>
             <hr>
@@ -268,7 +307,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/linux/">linux</a>
+                      <a class="hover-with-bg" href="/categories/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a>
                     
                   </div>
                 
@@ -276,7 +315,7 @@
                   <div class="post-meta">
                     <i class="iconfont icon-tags"></i>
                     
-                      <a class="hover-with-bg" href="/tags/system/">system</a>
+                      <a class="hover-with-bg" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/">大数据</a>
                     
                   </div>
                 
@@ -289,18 +328,12 @@
                   <div class="post-prev col-6">
                     
                     
-                      <a href="/2020/06/05/42-cdh-install/">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Cento7部署CDH 5.14</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </div>
                   <div class="post-next col-6">
                     
                     
-                      <a href="/2020/03/16/41-Elastic-add-LDAP-real/">
-                        <span class="hidden-mobile">ElasticSearch结合LDAP实现权限、用户管控</span>
+                      <a href="/2020/06/05/42-cdh-install/">
+                        <span class="hidden-mobile">Cento7部署CDH 5.14</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -450,7 +483,7 @@
     var typed = new Typed('#subtitle', {
       strings: [
         '  ',
-        "企业数据安全性思考及实施&nbsp;",
+        "CMS服务备份与恢复&nbsp;",
       ],
       cursorChar: "_",
       typeSpeed: 70,

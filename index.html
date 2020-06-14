@@ -166,52 +166,57 @@
     
     
     <div class="col-12 col-md-12 mx-auto index-info">
-      <a class="index-header" href="/2020/06/05/42-cdh-install/">CDH安装及高可用配置</a>
+      <a class="index-header" href="/2020/06/14/43-restoring-cloudera-manager-service/">CMS服务备份与恢复</a>
+
+      <a href="/2020/06/14/43-restoring-cloudera-manager-service/" class="index-excerpt">
+        
+        
+          
+        
+        <div>
+            上篇文章中，详细说明了如何去部署CDH实际生产中，CDH的重要服务都可以做HA（如HDFS、YARN）但是CMS却只能单点，若CMS主机损坏或者服务损坏，不可能重新启动再接管集群，需要手动去恢复今天模拟实际故障，演练CMS单点故障的处理方法和恢复。
+          </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>&nbsp;2020-06-14
+          </div>
+        
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-category"></i>
+            
+              <a href="/categories/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a>
+            
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/">大数据</a>
+            
+          </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <div class="col-12 col-md-12 mx-auto index-info">
+      <a class="index-header" href="/2020/06/05/42-cdh-install/">Cento7部署CDH 5.14</a>
 
       <a href="/2020/06/05/42-cdh-install/" class="index-excerpt">
         
         
           
         
-        <div>1. 硬件准备为了保持集群运转正常，请确认需要加入到集群中的节点硬件达到以下标准：
-
-
-
-节点类型
-CPU
-内存
-本地存储
-网络
-实例数量（最低要求）
-
-
-
-CM节点
-8核+
-32G+
-无特殊要求
-千兆网卡（2块最佳）
-1
-
-
-Master节点
-24核+
-64G+
-无特殊要求
-千兆网卡（2块最佳）
-2
-
-
-Worker节点
-32核+
-128G+
-SAS，4T+
-千兆网卡（2块最佳）
-3
-
-
-
-注意</div>
+        <div>
+            1.CDH介绍目前Hadoop比较流行的主要有2个版本，Apache和Cloudera版本。Apache Hadoop：社区人员比较多，更新频率比较快，但是稳定性比较差，安装配置繁琐，实际使用者少。Cloudera Hadoop（CDH）：Cloudera公司的发行版本，基于Apache Hadoop的二次开发，优化了组件兼容和交互接口、简化安装配置、提供界面统一管理程序</div>
       </a>
 
       <div class="index-btm post-metas">
@@ -562,48 +567,6 @@ SAS，4T+
             <i class="iconfont icon-tags"></i>
             
               <a href="/tags/python/">python</a>
-            
-          </div>
-        
-      </div>
-    </div>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <div class="col-12 col-md-12 mx-auto index-info">
-      <a class="index-header" href="/2019/04/10/33docker-zabbix-grafana/">docker搭建zabbix+grafana</a>
-
-      <a href="/2019/04/10/33docker-zabbix-grafana/" class="index-excerpt">
-        
-        
-          
-        
-        <div>
-            docker基于容器化，沙箱机制，可使你用较少的命令和脚本快速部署应用。一次构建，多处移植使用。再配合shell等脚本语言，可实现脚本化一键部署。
-          </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>&nbsp;2019-04-10
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/%E5%AE%B9%E5%99%A8/">容器</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/docker/">docker</a>
             
           </div>
         
