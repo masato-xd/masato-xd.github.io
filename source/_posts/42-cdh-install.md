@@ -1,9 +1,25 @@
 ---
-title: CDH安装及高可用配置
-date: 2020-06-14 14:25:28
+title: Cento7部署CDH 5.14
+date: 2020-06-05 14:25:28
 tags: 大数据
 categories: 数据分析
 ---
+
+{% note info %}
+
+1.CDH介绍
+目前Hadoop比较流行的主要有2个版本，Apache和Cloudera版本。
+
+Apache Hadoop：社区人员比较多，更新频率比较快，但是稳定性比较差，安装配置繁琐，实际使用者少。
+Cloudera Hadoop（CDH）：Cloudera公司的发行版本，基于Apache Hadoop的二次开发，优化了组件兼容和交互接口、简化安装配置、提供界面统一管理程序。
+
+2.Cloudera Manager 介绍
+Cloudera Manager 是用于管理cdh集群的端到端应用程序，统一管理和安装。CDH除了可以通过cm安装也可以通过yum,tar,rpm安装
+
+{% endnote %}
+
+<!-- more -->
+
 
 ## 1. 硬件准备
 
@@ -19,7 +35,6 @@ categories: 数据分析
 > \* 本地存储根据实际数据情况规划配置，使用单块盘做分区即可。
 
 
-<!-- more -->
 
 ## 2.环境准备
 
