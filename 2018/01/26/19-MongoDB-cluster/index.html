@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/huojian.jpg">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="Sow nothing, reap nothing.">
+  <meta name="author" content="Xu D.">
+  <meta name="keywords" content="undefined">
+  <title>MongoDB集群配置 - 律己宽人</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>律己宽人</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/links/">
+              <i class="iconfont icon-link-fill"></i>
+              友链</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-01-26 00:23">
+                    2018年1月26日 凌晨
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    1.6k 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    22
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <div class="note note-info">
+            <img src="/2018/01/26/19-MongoDB-cluster/mongo.png" srcset="/img/loading.gif" class=""><p>从图中可以看到有四个组件：<code>mongos、config server、shard、replica set</code>。</p>
+          </div>
+
+<a id="more"></a>
+
+<p><strong>mongos</strong>，数据库集群请求的入口，所有的请求都通过mongos进行协调，不需要在应用程序添加一个路由选择器，mongos自己就是一个请求分发中心，它负责把对应的数据请求请求转发到对应的shard服务器上。在生产环境通常有多mongos作为请求的入口，防止其中一个挂掉所有的mongodb请求都没有办法操作。</p>
+<p><strong>config server</strong>，顾名思义为配置服务器，存储所有数据库元信息（路由、分片）的配置。mongos本身没有物理存储分片服务器和数据路由信息，只是缓存在内存里，配置服务器则实际存储这些数据。mongos第一次启动或者关掉重启就会从 config server 加载配置信息，以后如果配置服务器信息变化会通知到所有的 mongos 更新自己的状态，这样 mongos 就能继续准确路由。在生产环境通常有多个 config server 配置服务器，因为它存储了分片路由的元数据，防止数据丢失！</p>
+<p><strong>shard，分片（sharding）</strong>是指将数据库拆分，将其分散在不同的机器上的过程。将数据分散到不同的机器上，不需要功能强大的服务器就可以存储更多的数据和处理更大的负载。基本思想就是将集合切成小块，这些块分散到若干片里，每个片只负责总数据的一部分，最后通过一个均衡器来对各个分片进行均衡（数据迁移）。</p>
+<p><strong>replica set</strong>，中文翻译副本集，其实就是shard的备份，防止shard挂掉之后数据丢失。复制提供了数据的冗余备份，并在多个服务器上存储数据副本，提高了数据的可用性， 并可以保证数据的安全性。</p>
+<p><strong>仲裁者（Arbiter）</strong>，是复制集中的一个MongoDB实例，它并不保存数据。仲裁节点使用最小的资源并且不要求硬件设备，不能将Arbiter部署在同一个数据集节点中，可以部署在其他应用服务器或者监视服务器中，也可部署在单独的虚拟机中。为了确保复制集中有奇数的投票成员（包括primary），需要添加仲裁节点做为投票，否则primary不能运行时不会自动切换primary。</p>
+<p>简单了解之后，我们可以这样总结一下，应用请求mongos来操作mongodb的增删改查，配置服务器存储数据库元信息，并且和mongos做同步，数据最终存入在shard（分片）上，为了防止数据丢失同步在副本集中存储了一份，仲裁在数据存储到分片的时候决定存储到哪个节点。</p>
+<hr>
+<p><strong>服务结构规划</strong></p>
+<table>
+<thead>
+<tr>
+<th align="center">mongo1</th>
+<th align="center">mongo2</th>
+<th align="center">mongo3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">mongos</td>
+<td align="center">mongos</td>
+<td align="center">mongos</td>
+</tr>
+<tr>
+<td align="center">config server</td>
+<td align="center">config server</td>
+<td align="center">config server</td>
+</tr>
+<tr>
+<td align="center">shard server1 主节点</td>
+<td align="center">shard server1 副节点</td>
+<td align="center">shard server1 仲裁</td>
+</tr>
+<tr>
+<td align="center">shard server2 仲裁</td>
+<td align="center">shard server2 主节点</td>
+<td align="center">shard server2 副节点</td>
+</tr>
+<tr>
+<td align="center">shard server3 副节点</td>
+<td align="center">shard server3 仲裁</td>
+<td align="center">shard server3 主节点</td>
+</tr>
+</tbody></table>
+<p><strong>mongo-ip</strong></p>
+<pre><code class="hljs plain">mongo1	10.20.49.142
+mongo2	10.20.49.143
+mongo3	10.20.49.144</code></pre>
+
+
+<p><strong>端口分配</strong></p>
+<pre><code class="hljs plain">mongos：30000
+config：31000
+shard1：32001
+shard2：32002
+shard3：32003</code></pre>
+
+<p><strong>创建目录</strong><br><code>mkdir -p config/data config/log mongos/data mongos/log shard1/data shard1/log shard2/data shard2/log shard3/data shard3/log</code></p>
+<p><strong>安装mongodb</strong><br>安装mongodb很简单,官网下载包以后解压即可,将bin目录中的程序加入到环境变量</p>
+<pre><code class="hljs bash">vim /etc/profile
+<span class="hljs-built_in">export</span> PATH=<span class="hljs-string">"<span class="hljs-variable">$PATH</span>:/usr/local/bin/mongo/"</span></code></pre>
+
+<p><strong>每一台上启动config server服务</strong><br><code>mongod --configsvr --dbpath config/data --port 31000 --logpath config/log/config.log --fork</code></p>
+<p><strong>每一台上启动分片服务</strong><br><code>mongod --shardsvr --replSet shard1 --port 32001 --dbpath shard1/data --logpath shard1/log/shard1.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTiger
+mongod --shardsvr --replSet shard2 --port 32002 --dbpath shard2/data --logpath shard2/log/shard2.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTiger
+mongod --shardsvr --replSet shard3 --port 32003 --dbpath shard3/data --logpath shard3/log/shard3.log --fork --journal --profile=1 --slowms=100 --storageEngine wiredTiger</code></p>
+<p><strong>每一台上启动mongos服务</strong><br><code>mongos --configdb 10.20.49.142:31000,10.20.49.143:31000,10.20.49.144:31000  --port 30000   --logpath  mongos/log/mongos.log --fork</code></p>
+<p><strong>配置副本集</strong></p>
+<pre><code class="hljs plain">#第一台mongo1
+mongo 127.0.0.1:32001
+use test;
+db.dropDatabase();
+db.setProfilingLevel(1); 
+use admin;
+config &#x3D; &#123; _id:&quot;shard1&quot;, members:[
+                     &#123;_id:0,host:&quot;10.20.49.142:32001&quot;&#125;,
+                     &#123;_id:1,host:&quot;10.20.49.143:32001&quot;&#125;,
+# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.144:22001&quot;,arbiterOnly:true&#125;
+                ]
+         &#125;;
+rs.initiate(config); 
+
+#第二台mongo2
+mongo 127.0.0.1:32002
+use test;
+db.dropDatabase();
+db.setProfilingLevel(1); 
+use admin;
+config &#x3D; &#123; _id:&quot;shard2&quot;, members:[
+                     &#123;_id:0,host:&quot;10.20.49.144:32002&quot;&#125;,
+                     &#123;_id:1,host:&quot;10.20.49.143:32002&quot;&#125;,
+# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.142:32002&quot;,arbiterOnly:true&#125;
+                ]
+         &#125;;
+rs.initiate(config);
+
+#第三台mongo3
+mongo 127.0.0.1:32003
+use test;
+db.dropDatabase();
+db.setProfilingLevel(1); 
+use admin;
+config &#x3D; &#123; _id:&quot;shard3&quot;, members:[
+                     &#123;_id:0,host:&quot;10.20.49.144:32003&quot;&#125;,
+                     &#123;_id:1,host:&quot;10.20.49.142:32003&quot;&#125;,
+# 这里没有执行         &#123;_id:2,host:&quot;10.20.49.143:32003&quot;,arbiterOnly:true&#125;
+                ]
+         &#125;;
+rs.initiate(config);</code></pre>
+
+
+<p><strong>连接到mongos设置分片</strong></p>
+<pre><code class="hljs plain">mongo 127.0.0.1:30000
+use admin;
+db.runCommand( &#123; addshard : &quot;shard1&#x2F;10.20.49.142:32001,10.20.49.143:32001&quot;&#125;);
+db.runCommand( &#123; addshard : &quot;shard2&#x2F;10.20.49.143:32002,10.20.49.144:32002&quot;&#125;);
+db.runCommand( &#123; addshard : &quot;shard3&#x2F;10.20.49.142:32003,10.20.49.144:32003&quot;&#125;);</code></pre>
+
+<p><strong>添加仲裁节点</strong></p>
+<blockquote>
+<p>这里还需要单独添加仲裁成员的原因：<br>是因为在配置mongod shard角色的时候没有配置仲裁，如果前面启动配置了，这里不需要执行</p>
+</blockquote>
+<pre><code class="hljs plain">#第一台的仲裁节点在mongo3上
+mongo 127.0.0.1:32001
+rs.addArb(&quot;10.20.49.144:32001&quot;);
+
+#第二台的仲裁节点在mongo1上
+mongo 127.0.0.1:32002
+rs.addArb(&quot;10.20.49.142:32002&quot;);
+
+#第三台的仲裁节点在mongo2上
+mongo 127.0.0.1:32003
+rs.addArb(&quot;10.20.49.143:32003&quot;);</code></pre>
+
+
+<p><strong>基本命令，查看、修改</strong></p>
+<pre><code class="hljs bash"><span class="hljs-comment"># 查看谁是primary节点</span>
+rs.isMaster()
+
+<span class="hljs-comment"># 查看节点配置</span>
+rs.conf()
+
+<span class="hljs-comment"># 删除节点</span>
+rs.remove(<span class="hljs-string">"ip:port"</span>)
+
+<span class="hljs-comment"># 修改配置以后</span>
+rs.reconfig(config)</code></pre>
+
+
+<hr>
+<p><strong>备份以及还原</strong></p>
+<pre><code class="hljs bash"><span class="hljs-comment">#导出所有的数据库</span>
+mongodump -h 127.0.0.1 -o /home/qqdz/mongobackup/171010-11
+
+<span class="hljs-comment">#导出指定数据库</span>
+mongodump -h 192.168.1.108 -d dbname -o /home/qqdz/mongobackup/171010-11/some_database
+
+<span class="hljs-comment">#恢复所有的数据库</span>
+mongorestore  /home/qqdz/mongobackup/171010-11
+
+<span class="hljs-comment">#恢复指定的数据库</span>
+mongorestore -d dbname /home/qqdz/mongobackup/171010-11/some_database</code></pre>
+
+<hr>
+<p><strong>相关资料：</strong><br><a href="http://www.ityouknow.com/mongodb/2017/08/05/mongodb-cluster-setup.html" target="_blank" rel="noopener">mongodb的分片和副本集搭建</a><br><a href="http://www.lanceyan.com/tech/arch/mongodb_shard1.html" target="_blank" rel="noopener">分片四</a><br><a href="http://blog.51yip.com/nosql/1573.html" target="_blank" rel="noopener">mongodb备份还原</a></p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/db/">db</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/mongodb/">mongodb</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/01/26/20-ETCD-problem/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ETCD alarm:NOSPACE 问题处理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/12/23/18-python-rex/">
+                        <span class="hidden-mobile">Python正则表达式的5个小贴士</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<p id="hitokoto">:D 获取中...</p>
+<script>
+  fetch('https://v1.hitokoto.cn')
+    .then(response => response.json())
+    .then(data => {
+      const hitokoto = document.getElementById('hitokoto')
+      hitokoto.innerText = data.hitokoto
+      })
+      .catch(console.error)
+</script>
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "MongoDB集群配置&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div>
+  <span id="timeDate">载入天数...</span>
+  <span id="times">载入时分秒...</span>
+  <script>
+  var now = new Date();
+  function createtime(){
+      var grt= new Date("07/28/2017 00:00:00");//此处修改你的建站时间或者网站上线时间
+      now.setTime(now.getTime()+250);
+      days = (now - grt ) / 1000 / 60 / 60 / 24;
+      dnum = Math.floor(days);
+      hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum);
+      hnum = Math.floor(hours);
+      if(String(hnum).length ==1 ){
+          hnum = "0" + hnum;
+      }
+      minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+      mnum = Math.floor(minutes);
+      if(String(mnum).length ==1 ){
+                mnum = "0" + mnum;
+      }
+      seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+      snum = Math.round(seconds);
+      if(String(snum).length ==1 ){
+                snum = "0" + snum;
+      }
+      document.getElementById("timeDate").innerHTML = "本站安全运行&nbsp"+dnum+"&nbsp天";
+      document.getElementById("times").innerHTML = hnum + "&nbsp小时&nbsp" + mnum + "&nbsp分&nbsp" + snum + "&nbsp秒";
+  }
+  setInterval("createtime()",250);
+  </script>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/huojian.jpg">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="Sow nothing, reap nothing.">
+  <meta name="author" content="Xu D.">
+  <meta name="keywords" content="undefined">
+  <title>ELK系列02-ELK分析MongoDB日志 - 律己宽人</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>律己宽人</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/links/">
+              <i class="iconfont icon-link-fill"></i>
+              友链</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2018-04-05 17:07">
+                    2018年4月5日 下午
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    699 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    10
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <div class="note note-info">
+            <p>线上有部分业务使用<code>MongoDB</code>作为存储<br>目前存在的问题是，并发很高的情况下经常宕掉，所以需要对一些指标进行监控、分析<br>监控使用<code>zabbix</code>，负责监视健康检查、连接数、占用服务器性能等指标<br>分析使用<code>ELK</code>，不多说，let’s do it</p>
+          </div>
+
+<a id="more"></a>
+
+
+
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备:"></a>环境准备:</h3><p><code>mongodb</code>需要开启<code>profile</code>性能分析。<br>统一将安装包放入<code>/opt/</code>下,在<code>mongo</code>服务器上只需要部署<code>filebeat</code>来负责采集日志<br><code>Filebeat</code>是轻量级的采集,不负责过滤,启动快,资源消耗小,适合做采集日志工具<br>直接使用<code>Filebeat</code>输出到<code>ElasticSearch</code>中也是可以的,数据是原样的,无法做分析<br>日志过滤和存储通过<code>Logstash</code>和<code>ElasticSearch</code>来负责,展示通过<code>Kibana</code></p>
+<h3 id="下载安装包"><a href="#下载安装包" class="headerlink" title="下载安装包:"></a>下载安装包:</h3><p>需要用到3个组件:</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># filebeat</span>
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.2.3-linux-x86_64.tar.gz
+<span class="hljs-comment"># Logstash</span>
+wget https://artifacts.elastic.co/downloads/logstash/logstash-6.2.3.tar.gz</code></pre>
+
+<h3 id="配置Filebeat"><a href="#配置Filebeat" class="headerlink" title="配置Filebeat:"></a>配置Filebeat:</h3><p><code>Filebeat</code>需要配置的不多,只需要确定<code>log</code>所在目录,能正常抓取、输出到<code>Logstash</code>中</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># cd /opt/filebeat</span>
+<span class="hljs-comment"># cat /opt/filebeat/mongo_fields.yml  </span>
+filebeat.prospectors:
+- <span class="hljs-built_in">type</span>: <span class="hljs-built_in">log</span>
+  paths:
+    - /home/qqdz/mongo/shard1/<span class="hljs-built_in">log</span>/shard1.log
+
+output.logstash:
+  hosts: [<span class="hljs-string">"10.20.33.52:5044"</span>]
+  
+<span class="hljs-comment"># 启动</span>
+./filebeat -e -c mongo_fields.yml</code></pre>
+
+
+
+<h3 id="配置Logstash"><a href="#配置Logstash" class="headerlink" title="配置Logstash:"></a>配置Logstash:</h3><p>我这里<code>Logstash</code>和<code>ElasticSearch</code>在一台上面</p>
+<p><code>Logstash</code>的配置复杂一些:</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># cd /opt/logstash</span>
+<span class="hljs-comment"># cat mongodb-pipline.conf</span>
+input &#123;
+    beats &#123;
+        port =&gt; <span class="hljs-string">"5044"</span>
+        client_inactivity_timeout =&gt; <span class="hljs-string">"86400"</span>
+    &#125;
+&#125;
+
+filter &#123;
+  grok &#123;
+       match =&gt; [<span class="hljs-string">"message"</span>,<span class="hljs-string">"%&#123;TIMESTAMP_ISO8601:timestamp&#125;\s+%&#123;MONGO3_SEVERITY:severity&#125;\s+%&#123;MONGO3_COMPONENT:component&#125;%&#123;SPACE&#125;(?:\[%&#123;DATA:context&#125;\])?\s+%&#123;GREEDYDATA:body&#125;"</span>]
+  &#125; 
+  <span class="hljs-keyword">if</span> [body] =~ <span class="hljs-string">"ms$"</span>  &#123;  
+       grok &#123;
+             match =&gt; [<span class="hljs-string">"body"</span>,<span class="hljs-string">".*\&#125;(\s+%&#123;NUMBER:spend_time:int&#125;ms$)?"</span>]
+       &#125;
+ &#125;
+ date &#123;
+   match =&gt; [ <span class="hljs-string">"timestamp"</span>, <span class="hljs-string">"ISO8601"</span> ]
+   remove_field =&gt; [ <span class="hljs-string">"timestamp"</span> ]
+  &#125;
+&#125;
+
+output &#123;
+  elasticsearch &#123; 
+        hosts =&gt; [<span class="hljs-string">"localhost:9200"</span>] 
+        index=&gt;<span class="hljs-string">"mongodb-slow-log-%&#123;+YYYY.MM.dd&#125;"</span>
+        &#125;
+  <span class="hljs-comment">#stdout &#123; codec =&gt; rubydebug &#125;</span>
+&#125;
+
+<span class="hljs-comment"># 检测配置</span>
+logstash-6.2.2/bin/logstash -f mongodb-pipline.conf --config.test_and_exit
+<span class="hljs-comment"># 启动(加automatic以后,修改配置不需要重启Logstash)</span>
+logstash-6.2.2/bin/logstash -f mongodb-pipline.conf --config.reload.automatic</code></pre>
+
+
+
+<h3 id="配置ElasticSearch-查看索引"><a href="#配置ElasticSearch-查看索引" class="headerlink" title="配置ElasticSearch,查看索引:"></a>配置ElasticSearch,查看索引:</h3><pre><code class="hljs bash"><span class="hljs-comment"># 我截取了关键的几个地方,可以到自动生成了根据Logstash定义的索引</span>
+<span class="hljs-comment"># 可以看到正常输出了</span>
+[root@CHJ-Transit02 logstash]<span class="hljs-comment"># curl 'localhost:9200/_cat/indices?v'</span>
+health status index                       pri rep docs.count  store.size pri.store.size
+green  open   mongodb-slow-log-2018.03.28   5   1     201952     232.7mb        116.3mb
+green  open   mongodb-slow-log-2018.03.30   5   1     163233     192.6mb         96.3mb
+green  open   mongodb-slow-log-2018.03.29   5   1     326301     377.6mb        188.7mb</code></pre>
+
+
+
+<h3 id="注意点"><a href="#注意点" class="headerlink" title="注意点:"></a>注意点:</h3><ol>
+<li>最复杂的地方是<code>grok</code>过滤规则的编写,需要大量的练习</li>
+<li>官方定义了常规解析,我们还需要根据<code>mongodb</code>日志来分割取值</li>
+</ol>
+<h3 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h3><pre><code class="hljs bash"><span class="hljs-comment"># 这个目录里面存放了很多预定义模式</span>
+logstash-6.2.2/vendor/bundle/jruby/2.3.0/gems/logstash-patterns-core-4.1.2/patterns</code></pre>
+
+<p><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns" target="_blank" rel="noopener">官方预定义Grok</a><br><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/mongodb" target="_blank" rel="noopener">Mongodb预定义</a><br><a href="https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns" target="_blank" rel="noopener">大部分应用的预定义</a></p>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/">数据分析</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/ELK/">ELK</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2018/04/05/31-elk03/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ELK系列03-kibana视图化简单尝试</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2018/04/04/29-nf-conntrack/">
+                        <span class="hidden-mobile">记一次服务器nf_conntrack:table_full</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<p id="hitokoto">:D 获取中...</p>
+<script>
+  fetch('https://v1.hitokoto.cn')
+    .then(response => response.json())
+    .then(data => {
+      const hitokoto = document.getElementById('hitokoto')
+      hitokoto.innerText = data.hitokoto
+      })
+      .catch(console.error)
+</script>
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "ELK系列02-ELK分析MongoDB日志&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div>
+  <span id="timeDate">载入天数...</span>
+  <span id="times">载入时分秒...</span>
+  <script>
+  var now = new Date();
+  function createtime(){
+      var grt= new Date("07/28/2017 00:00:00");//此处修改你的建站时间或者网站上线时间
+      now.setTime(now.getTime()+250);
+      days = (now - grt ) / 1000 / 60 / 60 / 24;
+      dnum = Math.floor(days);
+      hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum);
+      hnum = Math.floor(hours);
+      if(String(hnum).length ==1 ){
+          hnum = "0" + hnum;
+      }
+      minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+      mnum = Math.floor(minutes);
+      if(String(mnum).length ==1 ){
+                mnum = "0" + mnum;
+      }
+      seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+      snum = Math.round(seconds);
+      if(String(snum).length ==1 ){
+                snum = "0" + snum;
+      }
+      document.getElementById("timeDate").innerHTML = "本站安全运行&nbsp"+dnum+"&nbsp天";
+      document.getElementById("times").innerHTML = hnum + "&nbsp小时&nbsp" + mnum + "&nbsp分&nbsp" + snum + "&nbsp秒";
+  }
+  setInterval("createtime()",250);
+  </script>
+</div>
+
+</body>
+</html>

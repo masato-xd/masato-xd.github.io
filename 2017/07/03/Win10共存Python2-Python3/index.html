@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/img/huojian.jpg">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="Sow nothing, reap nothing.">
+  <meta name="author" content="Xu D.">
+  <meta name="keywords" content="undefined">
+  <title>Win10共存Python2,Python3 - 律己宽人</title>
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
+<link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_fmb4a04yx8h.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>律己宽人</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/">
+              <i class="iconfont icon-home-fill"></i>
+              首页</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/archives/">
+              <i class="iconfont icon-archive-fill"></i>
+              归档</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/categories/">
+              <i class="iconfont icon-category-fill"></i>
+              分类</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/tags/">
+              <i class="iconfont icon-tags-fill"></i>
+              标签</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/about/">
+              <i class="iconfont icon-user-fill"></i>
+              关于</a>
+          </li>
+        
+          
+          
+          
+          <li class="nav-item">
+            <a class="nav-link" href="/links/">
+              <i class="iconfont icon-link-fill"></i>
+              友链</a>
+          </li>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+                <div class="mt-3 post-meta">
+                  <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+                  <time datetime="2017-07-03 00:47">
+                    2017年7月3日 凌晨
+                  </time>
+                </div>
+              
+
+              <div class="mt-1">
+                
+                  
+                  <span class="post-meta mr-2">
+                    <i class="iconfont icon-chart"></i>
+                    699 字
+                  </span>
+                
+
+                
+                  
+                  <span class="post-meta mr-2">
+                      <i class="iconfont icon-clock-fill"></i>
+                    
+                    
+                    9
+                     分钟
+                  </span>
+                
+
+                
+              </div>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>有必要写一篇文章来分享一下设置p3和p2共存的文章，分享给大家<br>最后还有告诉大家怎么设置sub3的环境设置<br><a href="https://www.python.org/" target="_blank" rel="noopener">这是官网</a></p>
+<a id="more"></a>
+
+<blockquote>
+<p>我这边环境是先装的2，再装的3</p>
+</blockquote>
+<p>选择安装的时候<code>Add Python to path</code>别忘了</p>
+<img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/toPath.png" srcset="/img/loading.gif" class="" title="添加到系统变量">
+
+<p>Python2一样的安装方法</p>
+<hr>
+<h3 id="重点"><a href="#重点" class="headerlink" title="重点"></a>重点</h3><p>网上很多资料是修改python.exe文件名，但是我们不用这们麻烦<br><strong>官方其实有解决方案</strong><br>在安装Python3(&gt;=3.3)的时候，Python的安装包实际在<strong>系统中安装了一个启动器py.exe</strong>，默认<code>C:\Windows\</code>下面</p>
+<p>当你使用:<br>下面运行的就是python2</p>
+<blockquote>
+<p>py -2 hello.py</p>
+</blockquote>
+<p>下面运行的就是python3:</p>
+<blockquote>
+<p>py -3 hello.py</p>
+</blockquote>
+<p>不想使用 - 2/3的时候，可以在<strong>脚本的最上面</strong>添加一行<code>#!python2</code> 或者 <code>#!python3</code></p>
+<blockquote>
+<p>定义编码<code>coding: utf-8</code>要写在第二行</p>
+</blockquote>
+<pre><code class="hljs python"><span class="hljs-comment">#!python2</span>
+<span class="hljs-comment">#coding: utf-8</span></code></pre>
+<p><strong>这样就可以解决2和3的问题</strong></p>
+<hr>
+<h3 id="搞定PIP的问题"><a href="#搞定PIP的问题" class="headerlink" title="搞定PIP的问题"></a>搞定PIP的问题</h3><p>使用 <code>pip -V</code>可以看到版本号(默认会按照最开始安装的pip来使用,所以pip 也能使用)</p>
+<pre><code class="hljs powershell">pip <span class="hljs-literal">-V</span>
+pip <span class="hljs-number">8.1</span>.<span class="hljs-number">2</span> from c:\python27\lib\site<span class="hljs-literal">-packages</span>\pip<span class="hljs-literal">-8</span>.<span class="hljs-number">1.2</span><span class="hljs-literal">-py2</span>.<span class="hljs-number">7</span>.egg (python <span class="hljs-number">2.7</span>)</code></pre>
+
+<p>当使用<code>pip3 -V</code>会出现问题</p>
+<pre><code class="hljs powershell">pip3 <span class="hljs-literal">-V</span>
+Fatal error <span class="hljs-keyword">in</span> launcher: Unable to create <span class="hljs-keyword">process</span> <span class="hljs-keyword">using</span> <span class="hljs-string">'"'</span></code></pre>
+
+<p>为了统一,我们就使用前面提到的py程序了<br><code>py -2 -m pip -V</code></p>
+<pre><code class="hljs plain">pip 8.1.2 from C:\Python27\lib\site-packages\pip-8.1.2-py2.7.egg (python 2.7)</code></pre>
+
+<p><code>py -3 -m pip -V</code></p>
+<pre><code class="hljs plain">pip 9.0.1 from C:\python36\lib\site-packages (python 3.6)</code></pre>
+
+<p>就可以通过这样来正常使用了</p>
+<hr>
+<h3 id="接下来是编译器的问题"><a href="#接下来是编译器的问题" class="headerlink" title="接下来是编译器的问题"></a>接下来是编译器的问题</h3><p>因为我使用的是Sublim Txt3,环境也需要设置一下</p>
+<img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/newBuildSystem.png" srcset="/img/loading.gif" class="" title="选择新建编译系统">
+
+<p>首先按照步骤<code>Tools &gt; Build System &gt; New Build System</code><br>文件内容写入</p>
+<pre><code class="hljs bash"><span class="hljs-comment"># 注意是py的路径</span>
+	&#123;
+	    <span class="hljs-string">"cmd"</span>: [<span class="hljs-string">"C:/Windows/py"</span>, <span class="hljs-string">"-u"</span>, <span class="hljs-string">"<span class="hljs-variable">$file</span>"</span>],
+	    <span class="hljs-string">"file_regex"</span>: <span class="hljs-string">"^[ ]*File \"(...*?)\", line ([0-9]*)"</span>,
+	    <span class="hljs-string">"selector"</span>: <span class="hljs-string">"source.python"</span>,
+	&#125;</code></pre>
+<p>保存到<strong>User目录里面</strong>,名字写个python3吧,其实通用的</p>
+<p>以后编辑脚本的时候，在脚本最上面自定义要使用的编译器</p>
+<img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/python3.png" srcset="/img/loading.gif" class="" title="python3">
+
+<img src="/2017/07/03/Win10%E5%85%B1%E5%AD%98Python2-Python3/python2.png" srcset="/img/loading.gif" class="" title="python2">
+
+
+<hr>
+<p>ok,全部搞定,有问题评论留言</p>
+<hr>
+<p><strong>补充一点pip警告的问题</strong><br><code>DEPRECATION: The default format will switch to columns in the future. You can use --format=(legacy|columns) (or define a format=(legacy|columns) in your pip.conf under the [list] section) to disable this warning</code></p>
+<p>原则是不用管的,不会影响程序.但是遇到问题要解决它,我就是谷歌出来的,分享出来<br>在<code>C:\Users\你的账号</code>下建立pip文件夹，在pip下新建pip.ini：</p>
+<blockquote>
+<p>[list]<br>format=columns</p>
+</blockquote>
+<p><strong>或者:</strong><br>直接使用 pip freeze,  pip list 是将被弃用的</p>
+<p>还是要解释一下大概意思:</p>
+<blockquote>
+<p>它就是告诉你以后pip list的默认格式会采用columns，你可以在命令后面加上–format来指定什么展示格式</p>
+</blockquote>
+<p><strong>解决方法:</strong></p>
+<ol>
+<li>加文件</li>
+<li>改用pip freeze。</li>
+</ol>
+
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/python/">python</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/python/">python</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://zh.wikipedia.org/wiki/Wikipedia:CC_BY-SA_3.0%E5%8D%8F%E8%AE%AE%E6%96%87%E6%9C%AC" target="_blank" rel="nofollow noopener noopener">CC BY-SA 3.0协议</a> 。转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2017/07/06/python%E4%B8%ADsort%E5%92%8Csorted%E7%9A%84%E4%BD%BF%E7%94%A8/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">python中sort和sorted的使用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2017/06/30/Mysql%E5%BF%85%E7%9F%A5%E5%BF%85%E4%BC%9A-1/">
+                        <span class="hidden-mobile">Mysql必知必会 <1> </span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
+  </div>
+</footer>
+
+<p id="hitokoto">:D 获取中...</p>
+<script>
+  fetch('https://v1.hitokoto.cn')
+    .then(response => response.json())
+    .then(data => {
+      const hitokoto = document.getElementById('hitokoto')
+      hitokoto.innerText = data.hitokoto
+      })
+      .catch(console.error)
+</script>
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/main.js" ></script>
+
+
+  <script  src="/js/lazyload.js" ></script>
+
+
+
+  
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: '.post-content',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
+      }
+    });
+  </script>
+
+
+
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+<!-- Plugins -->
+
+
+
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "Win10共存Python2,Python3&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div>
+  <span id="timeDate">载入天数...</span>
+  <span id="times">载入时分秒...</span>
+  <script>
+  var now = new Date();
+  function createtime(){
+      var grt= new Date("07/28/2017 00:00:00");//此处修改你的建站时间或者网站上线时间
+      now.setTime(now.getTime()+250);
+      days = (now - grt ) / 1000 / 60 / 60 / 24;
+      dnum = Math.floor(days);
+      hours = (now - grt ) / 1000 / 60 / 60 - (24 * dnum);
+      hnum = Math.floor(hours);
+      if(String(hnum).length ==1 ){
+          hnum = "0" + hnum;
+      }
+      minutes = (now - grt ) / 1000 /60 - (24 * 60 * dnum) - (60 * hnum);
+      mnum = Math.floor(minutes);
+      if(String(mnum).length ==1 ){
+                mnum = "0" + mnum;
+      }
+      seconds = (now - grt ) / 1000 - (24 * 60 * 60 * dnum) - (60 * 60 * hnum) - (60 * mnum);
+      snum = Math.round(seconds);
+      if(String(snum).length ==1 ){
+                snum = "0" + snum;
+      }
+      document.getElementById("timeDate").innerHTML = "本站安全运行&nbsp"+dnum+"&nbsp天";
+      document.getElementById("times").innerHTML = hnum + "&nbsp小时&nbsp" + mnum + "&nbsp分&nbsp" + snum + "&nbsp秒";
+  }
+  setInterval("createtime()",250);
+  </script>
+</div>
+
+</body>
+</html>
